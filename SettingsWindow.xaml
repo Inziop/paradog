@@ -34,10 +34,14 @@
                         <ComboBox x:Name="EngineComboBox" Width="200" Margin="0,0,0,15"
                                   Background="#2D2D30" Foreground="White" 
                                   BorderBrush="#3C3C3C">
-                            <ComboBoxItem Content="Google Translate" Tag="Google" IsSelected="True"/>
-                            <ComboBoxItem Content="DeepL" Tag="DeepL"/>
-                            <ComboBoxItem Content="Microsoft Translator" Tag="Microsoft"/>
-                            <ComboBoxItem Content="OpenAI GPT" Tag="OpenAI"/>
+                            <ComboBoxItem Content="Google Translate" Tag="Google" IsSelected="True"
+                                          Background="#2D2D30" Foreground="White"/>
+                            <ComboBoxItem Content="DeepL" Tag="DeepL"
+                                          Background="#2D2D30" Foreground="White"/>
+                            <ComboBoxItem Content="Microsoft Translator" Tag="Microsoft"
+                                          Background="#2D2D30" Foreground="White"/>
+                            <ComboBoxItem Content="OpenAI GPT" Tag="OpenAI"
+                                          Background="#2D2D30" Foreground="White"/>
                         </ComboBox>
                         
                         <TextBlock Text="Note: Some services may require API keys for better performance." 
@@ -122,9 +126,12 @@
                             <ComboBox x:Name="ThemeComboBox" Width="150" 
                                       Background="#2D2D30" Foreground="White" 
                                       BorderBrush="#3C3C3C">
-                                <ComboBoxItem Content="Dark" Tag="Dark" IsSelected="True"/>
-                                <ComboBoxItem Content="Light" Tag="Light"/>
-                                <ComboBoxItem Content="Auto" Tag="Auto"/>
+                                <ComboBoxItem Content="Dark" Tag="Dark" IsSelected="True"
+                                              Background="#2D2D30" Foreground="White"/>
+                                <ComboBoxItem Content="Light" Tag="Light"
+                                              Background="#2D2D30" Foreground="White"/>
+                                <ComboBoxItem Content="Auto" Tag="Auto"
+                                              Background="#2D2D30" Foreground="White"/>
                             </ComboBox>
                         </StackPanel>
                         
@@ -144,9 +151,12 @@
                         <ComboBox x:Name="QualityComboBox" Width="200" 
                                   Background="#2D2D30" Foreground="White" 
                                   BorderBrush="#3C3C3C" Margin="0,0,0,15">
-                            <ComboBoxItem Content="Fast (Lower Quality)" Tag="Fast"/>
-                            <ComboBoxItem Content="Balanced" Tag="Balanced" IsSelected="True"/>
-                            <ComboBoxItem Content="High Quality (Slower)" Tag="High"/>
+                            <ComboBoxItem Content="Fast (Lower Quality)" Tag="Fast"
+                                          Background="#2D2D30" Foreground="White"/>
+                            <ComboBoxItem Content="Balanced" Tag="Balanced" IsSelected="True"
+                                          Background="#2D2D30" Foreground="White"/>
+                            <ComboBoxItem Content="High Quality (Slower)" Tag="High"
+                                          Background="#2D2D30" Foreground="White"/>
                         </ComboBox>
                         
                         <CheckBox x:Name="EnableLoggingCheckBox" Content="Enable detailed logging" 

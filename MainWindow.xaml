@@ -83,32 +83,7 @@
                                  Background="#2D2D30" Foreground="White" 
                                  BorderBrush="#3C3C3C" BorderThickness="1"
                                  Padding="8,4" FontSize="12"
-                                 TextChanged="OnSearchTextChanged">
-                            <TextBox.Style>
-                                <Style TargetType="TextBox">
-                                    <Setter Property="Template">
-                                        <Setter.Value>
-                                            <ControlTemplate TargetType="TextBox">
-                                                <Border Background="{TemplateBinding Background}" 
-                                                        BorderBrush="{TemplateBinding BorderBrush}" 
-                                                        BorderThickness="{TemplateBinding BorderThickness}" 
-                                                        CornerRadius="4">
-                                                    <Grid>
-                                                        <ScrollViewer x:Name="PART_ContentHost" 
-                                                                     Margin="{TemplateBinding Padding}"/>
-                                                        <TextBlock Text="🔍 Search files..." 
-                                                                   Foreground="#888888" 
-                                                                   Margin="8,4" 
-                                                                   IsHitTestVisible="False"
-                                                                   Visibility="{Binding Text, RelativeSource={RelativeSource TemplatedParent}, Converter={StaticResource StringToVisibilityConverter}}"/>
-                                                    </Grid>
-                                                </Border>
-                                            </ControlTemplate>
-                                        </Setter.Value>
-                                    </Setter>
-                                </Style>
-                            </TextBox.Style>
-                        </TextBox>
+                                 TextChanged="OnSearchTextChanged"/>
                     </StackPanel>
                     
                     <ListBox Grid.Row="1" ItemsSource="{Binding Files}" 
@@ -166,20 +141,32 @@
                         </Grid.ColumnDefinitions>
                         
                         <StackPanel Grid.Column="0" Orientation="Horizontal">
-                            <ComboBox Width="120" Margin="0,0,10,0">
-                                <ComboBoxItem Content="English" Tag="en" IsSelected="True"/>
-                                <ComboBoxItem Content="French" Tag="fr"/>
-                                <ComboBoxItem Content="German" Tag="de"/>
-                                <ComboBoxItem Content="Spanish" Tag="es"/>
+                            <ComboBox Width="120" Margin="0,0,10,0"
+                                      Background="#2D2D30" Foreground="White"
+                                      BorderBrush="#3C3C3C">
+                                <ComboBoxItem Content="English" Tag="en" IsSelected="True"
+                                              Background="#2D2D30" Foreground="White"/>
+                                <ComboBoxItem Content="French" Tag="fr"
+                                              Background="#2D2D30" Foreground="White"/>
+                                <ComboBoxItem Content="German" Tag="de"
+                                              Background="#2D2D30" Foreground="White"/>
+                                <ComboBoxItem Content="Spanish" Tag="es"
+                                              Background="#2D2D30" Foreground="White"/>
                             </ComboBox>
                             
                             <TextBlock Text="→" Foreground="White" VerticalAlignment="Center" Margin="5,0"/>
                             
-                            <ComboBox Width="120" Margin="10,0,0,0">
-                                <ComboBoxItem Content="Vietnamese" Tag="vi" IsSelected="True"/>
-                                <ComboBoxItem Content="Chinese" Tag="zh"/>
-                                <ComboBoxItem Content="Japanese" Tag="ja"/>
-                                <ComboBoxItem Content="Korean" Tag="ko"/>
+                            <ComboBox Width="120" Margin="10,0,0,0"
+                                      Background="#2D2D30" Foreground="White"
+                                      BorderBrush="#3C3C3C">
+                                <ComboBoxItem Content="Vietnamese" Tag="vi" IsSelected="True"
+                                              Background="#2D2D30" Foreground="White"/>
+                                <ComboBoxItem Content="Chinese" Tag="zh"
+                                              Background="#2D2D30" Foreground="White"/>
+                                <ComboBoxItem Content="Japanese" Tag="ja"
+                                              Background="#2D2D30" Foreground="White"/>
+                                <ComboBoxItem Content="Korean" Tag="ko"
+                                              Background="#2D2D30" Foreground="White"/>
                             </ComboBox>
                         </StackPanel>
                         
@@ -207,11 +194,29 @@
                           HeadersVisibility="Column" RowHeaderWidth="0"
                           Margin="10">
                     <DataGrid.Columns>
-                        <DataGridTextColumn Header="Key" Binding="{Binding Key}" 
-                                            Width="200" IsReadOnly="True"/>
+                        <DataGridTemplateColumn Header="Key" Width="200" IsReadOnly="True">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding Key}" 
+                                               Foreground="White" 
+                                               TextWrapping="Wrap" 
+                                               Padding="8,4"
+                                               VerticalAlignment="Center"/>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
                         
-                        <DataGridTextColumn Header="Source" Binding="{Binding Source}" 
-                                            Width="*" IsReadOnly="True"/>
+                        <DataGridTemplateColumn Header="Source" Width="*" IsReadOnly="True">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding Source}" 
+                                               Foreground="White" 
+                                               TextWrapping="Wrap" 
+                                               Padding="8,4"
+                                               VerticalAlignment="Center"/>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
                         
                         <DataGridTemplateColumn Header="Target" Width="*">
                             <DataGridTemplateColumn.CellTemplate>
@@ -220,11 +225,14 @@
                                         <TextBox Text="{Binding Target, UpdateSourceTrigger=PropertyChanged}" 
                                                  Background="#2D2D30" Foreground="White" 
                                                  BorderBrush="#3C3C3C" BorderThickness="1"
-                                                 Padding="8,4" VerticalAlignment="Center"/>
+                                                 Padding="8,4" VerticalAlignment="Stretch"
+                                                 TextWrapping="Wrap" AcceptsReturn="True"
+                                                 VerticalScrollBarVisibility="Auto"
+                                                 MinHeight="40"/>
                                         <TextBlock Text="{Binding StatusIcon}" 
                                                    HorizontalAlignment="Right" 
-                                                   VerticalAlignment="Center" 
-                                                   Margin="0,0,8,0" 
+                                                   VerticalAlignment="Top" 
+                                                   Margin="0,4,8,0" 
                                                    FontSize="16"/>
                                     </Grid>
                                 </DataTemplate>
