@@ -1,5 +1,3 @@
-
-
 <Project Sdk="Microsoft.NET.Sdk">
   <ItemGroup>
   <!-- Copy all non-source artifacts to output. We'll remove XAML and generated sources from the None set so the WPF build can handle them. -->
