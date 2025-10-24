@@ -41,6 +41,9 @@ public class MainViewModel : INotifyPropertyChanged, IDisposable
         SaveCommand = new AsyncRelayCommand(SaveAsync, (p) => SelectedFile != null);
         ShowStatisticsCommand = new RelayCommand(ShowStatistics);
         ExportCommand = new AsyncRelayCommand(ExportAsync, (p) => Files.Count > 0);
+        RefreshCommand = new RelayCommand(Refresh);
+        ShowAboutCommand = new RelayCommand(ShowAbout);
+        ShowWelcomeCommand = new RelayCommand(ShowWelcome);
     }
 
     public ObservableCollection<FileViewModel> Files { get; }
@@ -109,6 +112,9 @@ public class MainViewModel : INotifyPropertyChanged, IDisposable
     public RelayCommand OpenFolderCommand { get; }
     public RelayCommand OpenSettingsCommand { get; }
     public RelayCommand ShowStatisticsCommand { get; }
+    public RelayCommand RefreshCommand { get; }
+    public RelayCommand ShowAboutCommand { get; }
+    public RelayCommand ShowWelcomeCommand { get; }
     public AsyncRelayCommand TranslateAllCommand { get; }
     public AsyncRelayCommand SaveCommand { get; }
     public AsyncRelayCommand ExportCommand { get; }
@@ -167,6 +173,29 @@ public class MainViewModel : INotifyPropertyChanged, IDisposable
             MessageBox.Show($"Export error:\n{ex.Message}", "Error", 
                            MessageBoxButton.OK, MessageBoxImage.Error);
         }
+    }
+
+    private void Refresh(object? parameter)
+    {
+        if (SelectedFile != null)
+        {
+            // TODO: Implement refresh functionality
+            StatusMessage = "Refreshed current file";
+        }
+    }
+
+    private void ShowAbout(object? parameter)
+    {
+        var aboutWindow = new AboutWindow();
+        aboutWindow.Owner = Application.Current.MainWindow;
+        aboutWindow.ShowDialog();
+    }
+
+    private void ShowWelcome(object? parameter)
+    {
+        var welcomeWindow = new WelcomeWindow();
+        welcomeWindow.Owner = Application.Current.MainWindow;
+        welcomeWindow.ShowDialog();
     }
 
     private async Task LoadLocalizationFilesAsync(string folderPath)

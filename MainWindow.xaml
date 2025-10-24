@@ -47,6 +47,14 @@
                             Margin="10,0,0,0" Background="#6F42C1" Foreground="White" 
                             BorderThickness="0" Padding="15,8" FontWeight="SemiBold" Cursor="Hand"
                             ToolTip="Export translations to file"/>
+                    <Button Content="❓ Help" Command="{Binding ShowWelcomeCommand}" 
+                            Margin="10,0,0,0" Background="#17A2B8" Foreground="White" 
+                            BorderThickness="0" Padding="15,8" FontWeight="SemiBold" Cursor="Hand"
+                            ToolTip="Show help and welcome screen"/>
+                    <Button Content="ℹ️ About" Command="{Binding ShowAboutCommand}" 
+                            Margin="10,0,0,0" Background="#6C757D" Foreground="White" 
+                            BorderThickness="0" Padding="15,8" FontWeight="SemiBold" Cursor="Hand"
+                            ToolTip="About this application"/>
                 </StackPanel>
             </Grid>
         </Border>
@@ -178,10 +186,16 @@
                         <StackPanel Grid.Column="1" Orientation="Horizontal">
                             <Button Content="🔄 Translate All" Command="{Binding TranslateAllCommand}" 
                                     Margin="0,0,10,0" Background="#007ACC" Foreground="White" 
-                                    BorderThickness="0" Padding="15,8" FontWeight="SemiBold" Cursor="Hand"/>
+                                    BorderThickness="0" Padding="15,8" FontWeight="SemiBold" Cursor="Hand"
+                                    ToolTip="Translate all entries in the selected file"/>
                             <Button Content="💾 Save" Command="{Binding SaveCommand}" 
-                                    Background="#007ACC" Foreground="White" 
-                                    BorderThickness="0" Padding="15,8" FontWeight="SemiBold" Cursor="Hand"/>
+                                    Background="#28A745" Foreground="White" 
+                                    BorderThickness="0" Padding="15,8" FontWeight="SemiBold" Cursor="Hand"
+                                    ToolTip="Save changes to the original file"/>
+                            <Button Content="🔄 Refresh" Command="{Binding RefreshCommand}" 
+                                    Margin="10,0,0,0" Background="#6F42C1" Foreground="White" 
+                                    BorderThickness="0" Padding="15,8" FontWeight="SemiBold" Cursor="Hand"
+                                    ToolTip="Refresh the current file"/>
                         </StackPanel>
                     </Grid>
                 </Border>

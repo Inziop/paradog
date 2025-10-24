@@ -1,0 +1,188 @@
+<Window x:Class="ParadoxTranslator.WelcomeWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Welcome to Paradox Translator" Height="600" Width="800"
+        WindowStartupLocation="CenterScreen" ResizeMode="NoResize"
+        Background="#1E1E1E" Foreground="White">
+    
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        
+        <!-- Header -->
+        <Border Grid.Row="0" Background="#2D2D30" Padding="20">
+            <StackPanel Orientation="Horizontal">
+                <TextBlock Text="🎮" FontSize="32" Margin="0,0,15,0"/>
+                <StackPanel>
+                    <TextBlock Text="Paradox Translator" FontSize="24" FontWeight="Bold" 
+                               Foreground="White"/>
+                    <TextBlock Text="Welcome to your localization companion" FontSize="14" 
+                               Foreground="#CCCCCC" Margin="0,5,0,0"/>
+                </StackPanel>
+            </StackPanel>
+        </Border>
+        
+        <!-- Main Content -->
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Padding="30">
+            <StackPanel>
+                <!-- Quick Start -->
+                <GroupBox Header="🚀 Quick Start" Margin="0,0,0,25" 
+                          Foreground="White" BorderBrush="#3C3C3C">
+                    <StackPanel Margin="20">
+                        <TextBlock Text="Get started in 3 easy steps:" FontSize="16" FontWeight="Bold" 
+                                   Foreground="#007ACC" Margin="0,0,0,15"/>
+                        
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                            <Ellipse Width="30" Height="30" Fill="#007ACC" Margin="0,0,15,0"/>
+                            <StackPanel VerticalAlignment="Center">
+                                <TextBlock Text="1. Click 'Open Folder' to select your game's localization directory" 
+                                           FontWeight="SemiBold" Foreground="White"/>
+                                <TextBlock Text="Example: C:\Games\Victoria 3\game\localization\english" 
+                                           FontSize="12" Foreground="#CCCCCC" Margin="0,2,0,0"/>
+                            </StackPanel>
+                        </StackPanel>
+                        
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                            <Ellipse Width="30" Height="30" Fill="#28A745" Margin="0,0,15,0"/>
+                            <StackPanel VerticalAlignment="Center">
+                                <TextBlock Text="2. Choose your source and target languages" 
+                                           FontWeight="SemiBold" Foreground="White"/>
+                                <TextBlock Text="English → Vietnamese, French → German, etc." 
+                                           FontSize="12" Foreground="#CCCCCC" Margin="0,2,0,0"/>
+                            </StackPanel>
+                        </StackPanel>
+                        
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                            <Ellipse Width="30" Height="30" Fill="#FFC107" Margin="0,0,15,0"/>
+                            <StackPanel VerticalAlignment="Center">
+                                <TextBlock Text="3. Click 'Translate All' and watch the magic happen!" 
+                                           FontWeight="SemiBold" Foreground="White"/>
+                                <TextBlock Text="Your translations will appear in the Target column" 
+                                           FontSize="12" Foreground="#CCCCCC" Margin="0,2,0,0"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </StackPanel>
+                </GroupBox>
+                
+                <!-- Supported Games -->
+                <GroupBox Header="🎮 Supported Games" Margin="0,0,0,25" 
+                          Foreground="White" BorderBrush="#3C3C3C">
+                    <StackPanel Margin="20">
+                        <TextBlock Text="Works with all Paradox Interactive games:" FontSize="16" FontWeight="Bold" 
+                                   Foreground="#28A745" Margin="0,0,0,15"/>
+                        
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            
+                            <StackPanel Grid.Column="0">
+                                <TextBlock Text="• Victoria 3" FontWeight="SemiBold" Foreground="White" Margin="0,2"/>
+                                <TextBlock Text="• Europa Universalis IV" FontWeight="SemiBold" Foreground="White" Margin="0,2"/>
+                                <TextBlock Text="• Crusader Kings III" FontWeight="SemiBold" Foreground="White" Margin="0,2"/>
+                                <TextBlock Text="• Hearts of Iron IV" FontWeight="SemiBold" Foreground="White" Margin="0,2"/>
+                            </StackPanel>
+                            
+                            <StackPanel Grid.Column="1">
+                                <TextBlock Text="• Stellaris" FontWeight="SemiBold" Foreground="White" Margin="0,2"/>
+                                <TextBlock Text="• Imperator: Rome" FontWeight="SemiBold" Foreground="White" Margin="0,2"/>
+                                <TextBlock Text="• Age of Wonders 4" FontWeight="SemiBold" Foreground="White" Margin="0,2"/>
+                                <TextBlock Text="• And more..." FontWeight="SemiBold" Foreground="White" Margin="0,2"/>
+                            </StackPanel>
+                        </Grid>
+                    </StackPanel>
+                </GroupBox>
+                
+                <!-- Features -->
+                <GroupBox Header="✨ Key Features" Margin="0,0,0,25" 
+                          Foreground="White" BorderBrush="#3C3C3C">
+                    <StackPanel Margin="20">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            
+                            <StackPanel Grid.Column="0" Margin="0,0,10,0">
+                                <TextBlock Text="🔧 Multiple Translation Engines" FontWeight="SemiBold" 
+                                           Foreground="White" Margin="0,0,0,5"/>
+                                <TextBlock Text="Google, DeepL, Microsoft, OpenAI" FontSize="12" 
+                                           Foreground="#CCCCCC" Margin="0,0,0,10"/>
+                                
+                                <TextBlock Text="📊 Real-time Statistics" FontWeight="SemiBold" 
+                                           Foreground="White" Margin="0,0,0,5"/>
+                                <TextBlock Text="Track your translation progress" FontSize="12" 
+                                           Foreground="#CCCCCC" Margin="0,0,0,10"/>
+                                
+                                <TextBlock Text="💾 Auto Backup" FontWeight="SemiBold" 
+                                           Foreground="White" Margin="0,0,0,5"/>
+                                <TextBlock Text="Never lose your work" FontSize="12" 
+                                           Foreground="#CCCCCC"/>
+                            </StackPanel>
+                            
+                            <StackPanel Grid.Column="1" Margin="10,0,0,0">
+                                <TextBlock Text="🔍 Smart Search" FontWeight="SemiBold" 
+                                           Foreground="White" Margin="0,0,0,5"/>
+                                <TextBlock Text="Find entries quickly" FontSize="12" 
+                                           Foreground="#CCCCCC" Margin="0,0,0,10"/>
+                                
+                                <TextBlock Text="📤 Export Options" FontWeight="SemiBold" 
+                                           Foreground="White" Margin="0,0,0,5"/>
+                                <TextBlock Text="JSON, CSV, Excel formats" FontSize="12" 
+                                           Foreground="#CCCCCC" Margin="0,0,0,10"/>
+                                
+                                <TextBlock Text="⚙️ Customizable Settings" FontWeight="SemiBold" 
+                                           Foreground="White" Margin="0,0,0,5"/>
+                                <TextBlock Text="Configure to your needs" FontSize="12" 
+                                           Foreground="#CCCCCC"/>
+                            </StackPanel>
+                        </Grid>
+                    </StackPanel>
+                </GroupBox>
+                
+                <!-- Tips -->
+                <GroupBox Header="💡 Pro Tips" Margin="0,0,0,25" 
+                          Foreground="White" BorderBrush="#3C3C3C">
+                    <StackPanel Margin="20">
+                        <TextBlock Text="• Always backup your original files before translating" 
+                                   FontSize="14" Foreground="#FFC107" Margin="0,0,0,5"/>
+                        <TextBlock Text="• Use high-quality translation engines for important text" 
+                                   FontSize="14" Foreground="#FFC107" Margin="0,0,0,5"/>
+                        <TextBlock Text="• Check the Statistics panel to track your progress" 
+                                   FontSize="14" Foreground="#FFC107" Margin="0,0,0,5"/>
+                        <TextBlock Text="• Export your work regularly to avoid data loss" 
+                                   FontSize="14" Foreground="#FFC107"/>
+                    </StackPanel>
+                </GroupBox>
+            </StackPanel>
+        </ScrollViewer>
+        
+        <!-- Footer -->
+        <Border Grid.Row="2" Background="#2D2D30" Padding="20" BorderBrush="#3C3C3C" BorderThickness="0,1,0,0">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                
+                <CheckBox x:Name="DontShowAgainCheckBox" Content="Don't show this again" 
+                          Foreground="White" VerticalAlignment="Center"/>
+                
+                <StackPanel Grid.Column="1" Orientation="Horizontal">
+                    <Button Content="Get Started" Click="OnGetStartedClick"
+                            Background="#007ACC" Foreground="White" 
+                            BorderThickness="0" Padding="20,10" FontWeight="SemiBold" 
+                            Cursor="Hand" Margin="0,0,10,0"/>
+                    <Button Content="View Tutorial" Click="OnTutorialClick"
+                            Background="#28A745" Foreground="White" 
+                            BorderThickness="0" Padding="20,10" FontWeight="SemiBold" 
+                            Cursor="Hand"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+    </Grid>
+</Window>
