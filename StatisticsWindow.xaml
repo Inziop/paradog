@@ -1,0 +1,165 @@
+<Window x:Class="ParadoxTranslator.StatisticsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Translation Statistics - Paradox Translator" Height="500" Width="700"
+        WindowStartupLocation="CenterOwner" ResizeMode="CanMinimize"
+        Background="#1E1E1E" Foreground="White">
+    
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        
+        <!-- Header -->
+        <Border Grid.Row="0" Background="#2D2D30" Padding="20">
+            <StackPanel Orientation="Horizontal">
+                <TextBlock Text="📊" FontSize="24" Margin="0,0,10,0"/>
+                <TextBlock Text="Translation Statistics" FontSize="20" FontWeight="Bold" 
+                           Foreground="White" VerticalAlignment="Center"/>
+            </StackPanel>
+        </Border>
+        
+        <!-- Main Content -->
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Padding="20">
+            <StackPanel>
+                <!-- Overall Statistics -->
+                <GroupBox Header="Overall Progress" Margin="0,0,0,20" 
+                        Foreground="White" BorderBrush="#3C3C3C">
+                    <StackPanel Margin="15">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            
+                            <StackPanel Grid.Column="0" HorizontalAlignment="Center">
+                                <TextBlock Text="Total Files" FontSize="14" FontWeight="Bold" 
+                                           Foreground="#007ACC" HorizontalAlignment="Center"/>
+                                <TextBlock x:Name="TotalFilesText" Text="0" FontSize="24" FontWeight="Bold" 
+                                           Foreground="White" HorizontalAlignment="Center"/>
+                            </StackPanel>
+                            
+                            <StackPanel Grid.Column="1" HorizontalAlignment="Center">
+                                <TextBlock Text="Total Entries" FontSize="14" FontWeight="Bold" 
+                                           Foreground="#28A745" HorizontalAlignment="Center"/>
+                                <TextBlock x:Name="TotalEntriesText" Text="0" FontSize="24" FontWeight="Bold" 
+                                           Foreground="White" HorizontalAlignment="Center"/>
+                            </StackPanel>
+                            
+                            <StackPanel Grid.Column="2" HorizontalAlignment="Center">
+                                <TextBlock Text="Translated" FontSize="14" FontWeight="Bold" 
+                                           Foreground="#FFC107" HorizontalAlignment="Center"/>
+                                <TextBlock x:Name="TranslatedText" Text="0" FontSize="24" FontWeight="Bold" 
+                                           Foreground="White" HorizontalAlignment="Center"/>
+                            </StackPanel>
+                        </Grid>
+                        
+                        <ProgressBar x:Name="OverallProgressBar" Height="20" Margin="0,15,0,0" 
+                                     Background="#1E1E1E" Foreground="#007ACC"/>
+                        
+                        <TextBlock x:Name="OverallProgressText" Text="0% Complete" 
+                                   HorizontalAlignment="Center" Margin="0,5,0,0" 
+                                   FontWeight="SemiBold" Foreground="#CCCCCC"/>
+                    </StackPanel>
+                </GroupBox>
+                
+                <!-- File Statistics -->
+                <GroupBox Header="File Statistics" Margin="0,0,0,20" 
+                          Foreground="White" BorderBrush="#3C3C3C">
+                    <StackPanel Margin="15">
+                        <DataGrid x:Name="FileStatisticsGrid" 
+                                  AutoGenerateColumns="False" CanUserAddRows="False"
+                                  Background="Transparent" GridLinesVisibility="Horizontal"
+                                  HeadersVisibility="Column" RowHeaderWidth="0"
+                                  Height="200">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="File Name" Binding="{Binding FileName}" 
+                                                    Width="*" IsReadOnly="True"/>
+                                <DataGridTextColumn Header="Total" Binding="{Binding TotalEntries}" 
+                                                    Width="80" IsReadOnly="True"/>
+                                <DataGridTextColumn Header="Translated" Binding="{Binding TranslatedEntries}" 
+                                                    Width="80" IsReadOnly="True"/>
+                                <DataGridTextColumn Header="Progress" Binding="{Binding ProgressPercentage, StringFormat={}{0:F1}%}" 
+                                                    Width="80" IsReadOnly="True"/>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </StackPanel>
+                </GroupBox>
+                
+                <!-- Translation Quality -->
+                <GroupBox Header="Translation Quality" Margin="0,0,0,20" 
+                          Foreground="White" BorderBrush="#3C3C3C">
+                    <StackPanel Margin="15">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            
+                            <StackPanel Grid.Column="0">
+                                <TextBlock Text="Successful Translations" FontWeight="Bold" 
+                                           Foreground="#28A745" Margin="0,0,0,5"/>
+                                <TextBlock x:Name="SuccessfulText" Text="0" FontSize="18" 
+                                           Foreground="White"/>
+                            </StackPanel>
+                            
+                            <StackPanel Grid.Column="1">
+                                <TextBlock Text="Failed Translations" FontWeight="Bold" 
+                                           Foreground="#DC3545" Margin="0,0,0,5"/>
+                                <TextBlock x:Name="FailedText" Text="0" FontSize="18" 
+                                           Foreground="White"/>
+                            </StackPanel>
+                        </Grid>
+                    </StackPanel>
+                </GroupBox>
+                
+                <!-- Time Statistics -->
+                <GroupBox Header="Time Statistics" Margin="0,0,0,20" 
+                          Foreground="White" BorderBrush="#3C3C3C">
+                    <StackPanel Margin="15">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            
+                            <StackPanel Grid.Column="0" HorizontalAlignment="Center">
+                                <TextBlock Text="Start Time" FontSize="12" Foreground="#CCCCCC"/>
+                                <TextBlock x:Name="StartTimeText" Text="--:--:--" FontSize="14" 
+                                           Foreground="White" HorizontalAlignment="Center"/>
+                            </StackPanel>
+                            
+                            <StackPanel Grid.Column="1" HorizontalAlignment="Center">
+                                <TextBlock Text="Elapsed Time" FontSize="12" Foreground="#CCCCCC"/>
+                                <TextBlock x:Name="ElapsedTimeText" Text="00:00:00" FontSize="14" 
+                                           Foreground="White" HorizontalAlignment="Center"/>
+                            </StackPanel>
+                            
+                            <StackPanel Grid.Column="2" HorizontalAlignment="Center">
+                                <TextBlock Text="Avg. Time/Entry" FontSize="12" Foreground="#CCCCCC"/>
+                                <TextBlock x:Name="AvgTimeText" Text="0.0s" FontSize="14" 
+                                           Foreground="White" HorizontalAlignment="Center"/>
+                            </StackPanel>
+                        </Grid>
+                    </StackPanel>
+                </GroupBox>
+            </StackPanel>
+        </ScrollViewer>
+        
+        <!-- Footer -->
+        <Border Grid.Row="2" Background="#2D2D30" Padding="20" BorderBrush="#3C3C3C" BorderThickness="0,1,0,0">
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                <Button Content="Export Report" Margin="0,0,10,0" 
+                        Background="#007ACC" Foreground="White" 
+                        BorderThickness="0" Padding="15,8" Cursor="Hand"/>
+                <Button Content="Close" 
+                        Background="#666666" Foreground="White" 
+                        BorderThickness="0" Padding="15,8" Cursor="Hand"/>
+            </StackPanel>
+        </Border>
+    </Grid>
+</Window>

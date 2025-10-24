@@ -2,7 +2,7 @@
 [Dd]ebug/
 [Dd]ebugPublic/
 [Rr]elease/
-[Rr]eleases/
+[Rr]eleasePublic/
 x64/
 x86/
 [Ww][Ii][Nn]32/
@@ -147,7 +147,7 @@ AutoTest.Net/
 # Installshield output folder
 [Ee]xpress/
 
-# DocProject is a documentation generator add-in
+# DocProject is a documentation generator
 DocProject/buildhelp/
 DocProject/Help/*.HxT
 DocProject/Help/*.HxC
@@ -357,15 +357,23 @@ FodyWeavers.xsd
 *.userosscache
 *.sln.docstates
 
+# User-specific files (MonoDevelop/Xamarin Studio)
+*.userprefs
+
 # Mono auto generated files
 mono_crash.*
 
 # Windows image file caches
 Thumbs.db
+Thumbs.db:encryptable
 ehthumbs.db
+ehthumbs_vista.db
+
+# Dump file
+*.stackdump
 
 # Folder config file
-Desktop.ini
+[Dd]esktop.ini
 
 # Recycle Bin used on file shares
 $RECYCLE.BIN/
@@ -378,3 +386,13 @@ $RECYCLE.BIN/
 
 # Windows shortcuts
 *.lnk
+
+# JetBrains Rider
+.idea/
+*.sln.iml
+
+# Application specific
+*.log
+*.tmp
+*.bak
+*.backup

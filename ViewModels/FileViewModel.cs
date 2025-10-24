@@ -48,6 +48,7 @@ public class FileViewModel : INotifyPropertyChanged, IDisposable
             _totalEntries = value;
             OnPropertyChanged(nameof(TotalEntries));
             OnPropertyChanged(nameof(ProgressText));
+            OnPropertyChanged(nameof(ProgressPercentage));
         }
     }
 
@@ -59,6 +60,7 @@ public class FileViewModel : INotifyPropertyChanged, IDisposable
             _translatedEntries = value;
             OnPropertyChanged(nameof(TranslatedEntries));
             OnPropertyChanged(nameof(ProgressText));
+            OnPropertyChanged(nameof(ProgressPercentage));
         }
     }
 
@@ -99,8 +101,16 @@ public class FileViewModel : INotifyPropertyChanged, IDisposable
 
     private void UpdateCounts()
     {
-        TotalEntries = _entries.Count;
-        TranslatedEntries = _entries.Count(e => e.IsTranslated);
+        if (_entries != null)
+        {
+            TotalEntries = _entries.Count;
+            TranslatedEntries = _entries.Count(e => e.IsTranslated);
+        }
+        else
+        {
+            TotalEntries = 0;
+            TranslatedEntries = 0;
+        }
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;
