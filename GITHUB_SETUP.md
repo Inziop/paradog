@@ -127,19 +127,9 @@ A powerful WPF application for translating Paradox Interactive game localization
 - `yaml`
 - `game-development`
 
-## 📈 Community Engagement
 
-### Forums to Share
-- Paradox Interactive Forums
-- Reddit r/paradoxplaza
-- Steam Community
-- Discord servers
-- GitHub Community
 
-### Social Media
-- Twitter/X with screenshots
-- LinkedIn for professional network
-- YouTube demo video (optional)
+
 
 ---
 
