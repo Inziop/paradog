@@ -64,7 +64,7 @@ public partial class SettingsWindow : Window, IDisposable
 
         GoogleApiKeyTextBox.Text = cfg.GoogleApiKey;
         DeepLApiKeyTextBox.Text = cfg.DeepLApiKey;
-        GeminiApiKeyTextBox.Text = cfg.GeminiApiKey;
+        GeminiApiKeyTextBox.Text = cfg.GeminiApiKey;aaa
         GeminiEndpointTextBox.Text = cfg.GeminiEndpoint;
         EnableAICheckBox.IsChecked = cfg.EnableAi;
         OverwriteExistingCheckBox.IsChecked = cfg.OverwriteExistingTranslations;
