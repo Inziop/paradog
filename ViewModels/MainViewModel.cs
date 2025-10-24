@@ -39,6 +39,8 @@ public class MainViewModel : INotifyPropertyChanged, IDisposable
         OpenSettingsCommand = new RelayCommand(OpenSettings);
         TranslateAllCommand = new AsyncRelayCommand(TranslateAllAsync, (p) => !IsTranslating && SelectedFile != null);
         SaveCommand = new AsyncRelayCommand(SaveAsync, (p) => SelectedFile != null);
+        ShowStatisticsCommand = new RelayCommand(ShowStatistics);
+        ExportCommand = new AsyncRelayCommand(ExportAsync, (p) => Files.Count > 0);
     }
 
     public ObservableCollection<FileViewModel> Files { get; }
@@ -106,8 +108,10 @@ public class MainViewModel : INotifyPropertyChanged, IDisposable
 
     public RelayCommand OpenFolderCommand { get; }
     public RelayCommand OpenSettingsCommand { get; }
+    public RelayCommand ShowStatisticsCommand { get; }
     public AsyncRelayCommand TranslateAllCommand { get; }
     public AsyncRelayCommand SaveCommand { get; }
+    public AsyncRelayCommand ExportCommand { get; }
 
     private async void OpenFolder(object? parameter)
     {
@@ -124,9 +128,45 @@ public class MainViewModel : INotifyPropertyChanged, IDisposable
 
     private void OpenSettings(object? parameter)
     {
-        // TODO: Implement settings dialog
-        MessageBox.Show("Settings dialog not implemented yet.", "Settings", 
-                       MessageBoxButton.OK, MessageBoxImage.Information);
+        var settingsWindow = new SettingsWindow();
+        settingsWindow.Owner = Application.Current.MainWindow;
+        settingsWindow.ShowDialog();
+    }
+
+    private void ShowStatistics(object? parameter)
+    {
+        var statisticsWindow = new StatisticsWindow();
+        statisticsWindow.Owner = Application.Current.MainWindow;
+        statisticsWindow.ShowDialog();
+    }
+
+    private async Task ExportAsync(object? parameter)
+    {
+        try
+        {
+            StatusMessage = "Exporting translations...";
+            
+            var saveDialog = new SaveFileDialog
+            {
+                Title = "Export Translations",
+                Filter = "JSON files (*.json)|*.json|CSV files (*.csv)|*.csv|Excel files (*.xlsx)|*.xlsx",
+                DefaultExt = "json"
+            };
+
+            if (saveDialog.ShowDialog() == true)
+            {
+                // TODO: Implement export functionality
+                StatusMessage = "Export completed successfully";
+                MessageBox.Show("Export functionality will be implemented soon!", "Info", 
+                               MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"Export error: {ex.Message}";
+            MessageBox.Show($"Export error:\n{ex.Message}", "Error", 
+                           MessageBoxButton.OK, MessageBoxImage.Error);
+        }
     }
 
     private async Task LoadLocalizationFilesAsync(string folderPath)

@@ -4,8 +4,10 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d"
-        Title="Paradox Translator" Height="800" Width="1200"
-        WindowStartupLocation="CenterScreen">
+        Title="Paradox Translator" Height="900" Width="1400"
+        WindowStartupLocation="CenterScreen"
+        MinHeight="600" MinWidth="1000"
+        Background="#1E1E1E">
     
     <Grid>
         <Grid.RowDefinitions>
@@ -31,10 +33,20 @@
                 <StackPanel Grid.Column="1" Orientation="Horizontal">
                     <Button Content="📁 Open Folder" Command="{Binding OpenFolderCommand}" 
                             Margin="0,0,10,0" Background="#007ACC" Foreground="White" 
-                            BorderThickness="0" Padding="15,8" FontWeight="SemiBold" Cursor="Hand"/>
+                            BorderThickness="0" Padding="15,8" FontWeight="SemiBold" Cursor="Hand"
+                            ToolTip="Select a folder containing localization files"/>
                     <Button Content="⚙️ Settings" Command="{Binding OpenSettingsCommand}" 
                             Background="#007ACC" Foreground="White" 
-                            BorderThickness="0" Padding="15,8" FontWeight="SemiBold" Cursor="Hand"/>
+                            BorderThickness="0" Padding="15,8" FontWeight="SemiBold" Cursor="Hand"
+                            ToolTip="Configure translation settings"/>
+                    <Button Content="📊 Statistics" Command="{Binding ShowStatisticsCommand}" 
+                            Margin="10,0,0,0" Background="#28A745" Foreground="White" 
+                            BorderThickness="0" Padding="15,8" FontWeight="SemiBold" Cursor="Hand"
+                            ToolTip="View translation statistics"/>
+                    <Button Content="💾 Export" Command="{Binding ExportCommand}" 
+                            Margin="10,0,0,0" Background="#6F42C1" Foreground="White" 
+                            BorderThickness="0" Padding="15,8" FontWeight="SemiBold" Cursor="Hand"
+                            ToolTip="Export translations to file"/>
                 </StackPanel>
             </Grid>
         </Border>
@@ -55,8 +67,41 @@
                         <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
                     
-                    <TextBlock Grid.Row="0" Text="Localization Files" FontWeight="Bold" 
-                               Foreground="White" Margin="15,15,15,10"/>
+                    <StackPanel Grid.Row="0" Margin="15,15,15,10">
+                        <TextBlock Text="Localization Files" FontWeight="Bold" 
+                                   Foreground="White" Margin="0,0,0,10"/>
+                        
+                        <TextBox x:Name="SearchTextBox" 
+                                 Background="#2D2D30" Foreground="White" 
+                                 BorderBrush="#3C3C3C" BorderThickness="1"
+                                 Padding="8,4" FontSize="12"
+                                 TextChanged="OnSearchTextChanged">
+                            <TextBox.Style>
+                                <Style TargetType="TextBox">
+                                    <Setter Property="Template">
+                                        <Setter.Value>
+                                            <ControlTemplate TargetType="TextBox">
+                                                <Border Background="{TemplateBinding Background}" 
+                                                        BorderBrush="{TemplateBinding BorderBrush}" 
+                                                        BorderThickness="{TemplateBinding BorderThickness}" 
+                                                        CornerRadius="4">
+                                                    <Grid>
+                                                        <ScrollViewer x:Name="PART_ContentHost" 
+                                                                     Margin="{TemplateBinding Padding}"/>
+                                                        <TextBlock Text="🔍 Search files..." 
+                                                                   Foreground="#888888" 
+                                                                   Margin="8,4" 
+                                                                   IsHitTestVisible="False"
+                                                                   Visibility="{Binding Text, RelativeSource={RelativeSource TemplatedParent}, Converter={StaticResource StringToVisibilityConverter}}"/>
+                                                    </Grid>
+                                                </Border>
+                                            </ControlTemplate>
+                                        </Setter.Value>
+                                    </Setter>
+                                </Style>
+                            </TextBox.Style>
+                        </TextBox>
+                    </StackPanel>
                     
                     <ListBox Grid.Row="1" ItemsSource="{Binding Files}" 
                              SelectedItem="{Binding SelectedFile}"
@@ -81,7 +126,7 @@
                                                    FontSize="12" Foreground="#CCCCCC" 
                                                    Margin="0,2,0,0"/>
                                         
-                                        <ProgressBar Grid.Row="2" Value="{Binding ProgressPercentage}" 
+                                        <ProgressBar Grid.Row="2" Value="{Binding ProgressPercentage, Mode=OneWay}" 
                                                      Height="4" Margin="0,5,0,0" 
                                                      Background="#1E1E1E" 
                                                      Foreground="#007ACC"/>
