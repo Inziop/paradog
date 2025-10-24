@@ -28,6 +28,18 @@ public class TranslationConfig
     public int TimeoutSeconds { get; set; } = 30;
     public bool OverwriteExistingTranslations { get; set; } = false;
     public bool TreatPlaceholderMismatchAsError { get; set; } = true;
+
+    // UI and advanced settings persisted for convenience
+    public bool CreateBackupBeforeSave { get; set; } = true;
+    public string Theme { get; set; } = "Dark";
+    public bool ShowProgressAnimations { get; set; } = true;
+    public bool AutoSave { get; set; } = false;
+    public string Quality { get; set; } = "Balanced";
+    public bool EnableLogging { get; set; } = false;
+    public bool ShowDebugInfo { get; set; } = false;
+    public bool EnableAi { get; set; } = false;
+    // Temporary testing preview mode used by AI translator (default: off)
+    public bool MockMode { get; set; } = false;
 }
 
 /// <summary>
