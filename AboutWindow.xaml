@@ -1,0 +1,129 @@
+<Window x:Class="ParadoxTranslator.AboutWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="About Paradox Translator" Height="500" Width="600"
+        WindowStartupLocation="CenterOwner" ResizeMode="NoResize"
+        Background="#1E1E1E" Foreground="White">
+    
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        
+        <!-- Header -->
+        <Border Grid.Row="0" Background="#2D2D30" Padding="30">
+            <StackPanel Orientation="Horizontal">
+                <TextBlock Text="🎮" FontSize="48" Margin="0,0,20,0"/>
+                <StackPanel>
+                    <TextBlock Text="Paradox Translator" FontSize="28" FontWeight="Bold" 
+                               Foreground="White"/>
+                    <TextBlock Text="Version 1.0.0" FontSize="16" 
+                               Foreground="#CCCCCC" Margin="0,5,0,0"/>
+                    <TextBlock Text="Professional localization tool for Paradox games" FontSize="14" 
+                               Foreground="#888888" Margin="0,2,0,0"/>
+                </StackPanel>
+            </StackPanel>
+        </Border>
+        
+        <!-- Main Content -->
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Padding="30">
+            <StackPanel>
+                <!-- Description -->
+                <TextBlock Text="A powerful WPF application designed specifically for translating Paradox Interactive game localization files. Built with modern technology and user-friendly interface." 
+                           FontSize="14" Foreground="#CCCCCC" TextWrapping="Wrap" Margin="0,0,0,25"/>
+                
+                <!-- Features -->
+                <GroupBox Header="✨ Key Features" Margin="0,0,0,20" 
+                          Foreground="White" BorderBrush="#3C3C3C">
+                    <StackPanel Margin="20">
+                        <TextBlock Text="• Multiple translation engines (Google, DeepL, Microsoft, OpenAI)" 
+                                   FontSize="14" Foreground="White" Margin="0,0,0,5"/>
+                        <TextBlock Text="• Real-time progress tracking and statistics" 
+                                   FontSize="14" Foreground="White" Margin="0,0,0,5"/>
+                        <TextBlock Text="• Smart search and filtering capabilities" 
+                                   FontSize="14" Foreground="White" Margin="0,0,0,5"/>
+                        <TextBlock Text="• Export to multiple formats (JSON, CSV, Excel)" 
+                                   FontSize="14" Foreground="White" Margin="0,0,0,5"/>
+                        <TextBlock Text="• Automatic backup and validation" 
+                                   FontSize="14" Foreground="White" Margin="0,0,0,5"/>
+                        <TextBlock Text="• Professional UI with dark theme" 
+                                   FontSize="14" Foreground="White"/>
+                    </StackPanel>
+                </GroupBox>
+                
+                <!-- Supported Games -->
+                <GroupBox Header="🎮 Supported Games" Margin="0,0,0,20" 
+                          Foreground="White" BorderBrush="#3C3C3C">
+                    <StackPanel Margin="20">
+                        <TextBlock Text="Victoria 3, Europa Universalis IV, Crusader Kings III, Hearts of Iron IV, Stellaris, Imperator: Rome, and all other Paradox Interactive games with YAML localization files." 
+                                   FontSize="14" Foreground="#CCCCCC" TextWrapping="Wrap"/>
+                    </StackPanel>
+                </GroupBox>
+                
+                <!-- Technical Info -->
+                <GroupBox Header="🔧 Technical Information" Margin="0,0,0,20" 
+                          Foreground="White" BorderBrush="#3C3C3C">
+                    <StackPanel Margin="20">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            
+                            <TextBlock Grid.Column="0" Text="Framework:" FontWeight="SemiBold" 
+                                       Foreground="White" Margin="0,0,10,5"/>
+                            <TextBlock Grid.Column="1" Text=".NET 8.0 WPF" 
+                                       Foreground="#CCCCCC" Margin="0,0,0,5"/>
+                            
+                            <TextBlock Grid.Column="0" Text="Architecture:" FontWeight="SemiBold" 
+                                       Foreground="White" Margin="0,0,10,5"/>
+                            <TextBlock Grid.Column="1" Text="MVVM Pattern" 
+                                       Foreground="#CCCCCC" Margin="0,0,0,5"/>
+                            
+                            <TextBlock Grid.Column="0" Text="License:" FontWeight="SemiBold" 
+                                       Foreground="White" Margin="0,0,10,5"/>
+                            <TextBlock Grid.Column="1" Text="MIT License" 
+                                       Foreground="#CCCCCC" Margin="0,0,0,5"/>
+                            
+                            <TextBlock Grid.Column="0" Text="Repository:" FontWeight="SemiBold" 
+                                       Foreground="White" Margin="0,0,10,5"/>
+                            <TextBlock Grid.Column="1" Text="GitHub - Open Source" 
+                                       Foreground="#007ACC" Margin="0,0,0,5"/>
+                        </Grid>
+                    </StackPanel>
+                </GroupBox>
+                
+                <!-- Credits -->
+                <GroupBox Header="🙏 Credits" Margin="0,0,0,20" 
+                          Foreground="White" BorderBrush="#3C3C3C">
+                    <StackPanel Margin="20">
+                        <TextBlock Text="• Paradox Interactive for creating amazing games" 
+                                   FontSize="14" Foreground="#CCCCCC" Margin="0,0,0,5"/>
+                        <TextBlock Text="• Translation service providers (Google, DeepL, Microsoft, OpenAI)" 
+                                   FontSize="14" Foreground="#CCCCCC" Margin="0,0,0,5"/>
+                        <TextBlock Text="• The WPF and .NET community" 
+                                   FontSize="14" Foreground="#CCCCCC" Margin="0,0,0,5"/>
+                        <TextBlock Text="• Contributors and testers" 
+                                   FontSize="14" Foreground="#CCCCCC"/>
+                    </StackPanel>
+                </GroupBox>
+            </StackPanel>
+        </ScrollViewer>
+        
+        <!-- Footer -->
+        <Border Grid.Row="2" Background="#2D2D30" Padding="20" BorderBrush="#3C3C3C" BorderThickness="0,1,0,0">
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                <Button Content="GitHub Repository" Click="OnGitHubClick"
+                        Background="#007ACC" Foreground="White" 
+                        BorderThickness="0" Padding="15,8" FontWeight="SemiBold" 
+                        Cursor="Hand" Margin="0,0,10,0"/>
+                <Button Content="Close" Click="OnCloseClick"
+                        Background="#666666" Foreground="White" 
+                        BorderThickness="0" Padding="15,8" FontWeight="SemiBold" 
+                        Cursor="Hand"/>
+            </StackPanel>
+        </Border>
+    </Grid>
+</Window>
