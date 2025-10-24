@@ -8,8 +8,8 @@ namespace ParadoxTranslator.Models;
 public class LocalizationEntry : INotifyPropertyChanged
 {
     private string _key = string.Empty;
-    private string _source = string.Empty;
-    private string _target = string.Empty;
+    private string _sourceText = string.Empty;
+    private string _translatedText = string.Empty;
     private string _rawLineBefore = string.Empty;
     private string _rawLineAfter = string.Empty;
     private bool _isTranslated;
@@ -25,23 +25,23 @@ public class LocalizationEntry : INotifyPropertyChanged
         }
     }
 
-    public string Source
+    public string SourceText
     {
-        get => _source;
+        get => _sourceText;
         set
         {
-            _source = value;
-            OnPropertyChanged(nameof(Source));
+            _sourceText = value;
+            OnPropertyChanged(nameof(SourceText));
         }
     }
 
-    public string Target
+    public string TranslatedText
     {
-        get => _target;
+        get => _translatedText;
         set
         {
-            _target = value;
-            OnPropertyChanged(nameof(Target));
+            _translatedText = value;
+            OnPropertyChanged(nameof(TranslatedText));
             IsTranslated = !string.IsNullOrWhiteSpace(value);
         }
     }

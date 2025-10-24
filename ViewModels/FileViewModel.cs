@@ -132,4 +132,15 @@ public class FileViewModel : INotifyPropertyChanged, IDisposable
             _entries.Clear();
         }
     }
+
+    /// <summary>
+    /// Recalculate counts for total/translated entries. Call after updating individual entries.
+    /// </summary>
+    public void RecalculateCounts()
+    {
+        UpdateCounts();
+        // Notify properties that depend on counts
+        OnPropertyChanged(nameof(ProgressText));
+        OnPropertyChanged(nameof(ProgressPercentage));
+    }
 }

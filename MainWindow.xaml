@@ -9,6 +9,87 @@
         MinHeight="600" MinWidth="1000"
         Background="#1E1E1E">
     
+    <Window.Resources>
+        <Style x:Key="AICheckBoxStyle" TargetType="CheckBox">
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="Margin" Value="8,0,0,0"/>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Opacity" Value="0.9"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="HeaderButtonStyle" TargetType="Button">
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="12,6"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Opacity" Value="0.95"/>
+                </Trigger>
+                <Trigger Property="IsEnabled" Value="False">
+                    <Setter Property="Background" Value="#3A3A3A"/>
+                    <Setter Property="Foreground" Value="#E6E6E6"/>
+                    <Setter Property="Opacity" Value="0.95" />
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="HeaderComboBoxStyle" TargetType="ComboBox">
+            <Setter Property="Foreground" Value="White" />
+            <Setter Property="Background" Value="#2D2D30" />
+            <Setter Property="BorderBrush" Value="#3C3C3C" />
+            <Setter Property="Padding" Value="6,2" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ComboBox">
+                        <Grid>
+                            <Border x:Name="Bd"
+                                    Background="{TemplateBinding Background}"
+                                    BorderBrush="{TemplateBinding BorderBrush}"
+                                    BorderThickness="{TemplateBinding BorderThickness}"
+                                    CornerRadius="2">
+                                <DockPanel>
+                                    <ContentPresenter x:Name="ContentSite"
+                                                      ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}"
+                                                      Content="{TemplateBinding SelectionBoxItem}"
+                                                      VerticalAlignment="Center"
+                                                      Margin="6,0,6,0"
+                                                      RecognizesAccessKey="True" />
+                                    <ToggleButton DockPanel.Dock="Right" Focusable="False" IsChecked="{Binding IsDropDownOpen, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}"
+                                                  Background="Transparent" BorderThickness="0" Width="24">
+                                        <Path Data="M 0 0 L 4 4 L 8 0 Z" Fill="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </ToggleButton>
+                                </DockPanel>
+                            </Border>
+                            <Popup Name="Popup"
+                                   Placement="Bottom"
+                                   IsOpen="{TemplateBinding IsDropDownOpen}"
+                                   AllowsTransparency="True"
+                                   Focusable="False"
+                                   PopupAnimation="Slide">
+                                <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="1">
+                                    <ScrollViewer CanContentScroll="True">
+                                        <ItemsPresenter/>
+                                    </ScrollViewer>
+                                </Border>
+                            </Popup>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="Bd" Property="Opacity" Value="0.6" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
+
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -23,243 +104,269 @@
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
-                
+
                 <StackPanel Grid.Column="0" Orientation="Horizontal">
                     <TextBlock Text="🎮" FontSize="24" Margin="0,0,10,0"/>
                     <TextBlock Text="Paradox Translator" FontSize="20" FontWeight="Bold" 
                                Foreground="White" VerticalAlignment="Center"/>
                 </StackPanel>
-                
+
                 <StackPanel Grid.Column="1" Orientation="Horizontal">
-                    <Button Content="📁 Open Folder" Command="{Binding OpenFolderCommand}" 
-                            Margin="0,0,10,0" Background="#007ACC" Foreground="White" 
-                            BorderThickness="0" Padding="15,8" FontWeight="SemiBold" Cursor="Hand"
-                            ToolTip="Select a folder containing localization files"/>
+                    <!-- AI Controls -->
+                    <Border Background="#252526" CornerRadius="4" Padding="8,4" Margin="0,0,10,0">
+                        <StackPanel Orientation="Horizontal">
+                            <Border Background="{Binding AiStatusBrush}" CornerRadius="4" Padding="6,4" VerticalAlignment="Center">
+                                <TextBlock Text="{Binding AiStatusText}" Foreground="White" FontWeight="SemiBold"/>
+                            </Border>
+                            <CheckBox Content="Enable AI" IsChecked="{Binding AiEnabled, Mode=TwoWay}" 
+                                    Style="{StaticResource AICheckBoxStyle}"/>
+                            <CheckBox Content="Mock Mode" IsChecked="{Binding MockMode, Mode=TwoWay}" 
+                                    Style="{StaticResource AICheckBoxStyle}"
+                                    ToolTip="Toggle Mock Mode (no API calls)"/>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Language selectors -->
+                    <Border Background="#252526" CornerRadius="4" Padding="8,4" Margin="0,0,10,0">
+                        <DockPanel>
+                            <TextBlock Text="From:" Foreground="#CCCCCC" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                            <ComboBox Width="120" Style="{StaticResource HeaderComboBoxStyle}"
+                                     SelectedValuePath="Tag"
+                                     SelectedValue="{Binding SourceLanguage, Mode=TwoWay}">
+                                <ComboBoxItem Content="English" Tag="en" />
+                                <ComboBoxItem Content="French" Tag="fr" />
+                                <ComboBoxItem Content="German" Tag="de" />
+                                <ComboBoxItem Content="Spanish" Tag="es" />
+                                <ComboBoxItem Content="Vietnamese" Tag="vi" />
+                                <ComboBoxItem Content="Chinese" Tag="zh" />
+                                <ComboBoxItem Content="Japanese" Tag="ja" />
+                                <ComboBoxItem Content="Korean" Tag="ko" />
+                            </ComboBox>
+                        </DockPanel>
+                    </Border>
+
+                    <Border Background="#252526" CornerRadius="4" Padding="8,4" Margin="0,0,10,0">
+                        <DockPanel>
+                            <TextBlock Text="To:" Foreground="#CCCCCC" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                            <ComboBox Width="120" Style="{StaticResource HeaderComboBoxStyle}"
+                                     SelectedValuePath="Tag"
+                                     SelectedValue="{Binding TargetLanguage, Mode=TwoWay}">
+                                <ComboBoxItem Content="Vietnamese" Tag="vi" />
+                                <ComboBoxItem Content="Chinese" Tag="zh" />
+                                <ComboBoxItem Content="Japanese" Tag="ja" />
+                                <ComboBoxItem Content="Korean" Tag="ko" />
+                                <ComboBoxItem Content="English" Tag="en" />
+                                <ComboBoxItem Content="French" Tag="fr" />
+                                <ComboBoxItem Content="German" Tag="de" />
+                                <ComboBoxItem Content="Spanish" Tag="es" />
+                            </ComboBox>
+                        </DockPanel>
+                    </Border>
+
+                    <!-- File Actions -->
+                    <StackPanel Orientation="Horizontal" Margin="0,0,10,0">
+                        <Button Content="📄 Open File" Command="{Binding OpenYamlFileCommand}"
+                                Background="#007ACC" Style="{StaticResource HeaderButtonStyle}"
+                                Margin="0,0,5,0" ToolTip="Open a YAML localization file"/>
+                        <Button Content="📁 Open Folder" Command="{Binding OpenFolderCommand}"
+                                Background="#007ACC" Style="{StaticResource HeaderButtonStyle}"
+                                ToolTip="Open a folder containing localization files"/>
+                    </StackPanel>
+
+                    <!-- Other Actions -->
                     <Button Content="⚙️ Settings" Command="{Binding OpenSettingsCommand}" 
-                            Background="#007ACC" Foreground="White" 
-                            BorderThickness="0" Padding="15,8" FontWeight="SemiBold" Cursor="Hand"
+                            Background="#007ACC" Style="{StaticResource HeaderButtonStyle}"
+                            Margin="10,0,0,0"
                             ToolTip="Configure translation settings"/>
                     <Button Content="📊 Statistics" Command="{Binding ShowStatisticsCommand}" 
-                            Margin="10,0,0,0" Background="#28A745" Foreground="White" 
-                            BorderThickness="0" Padding="15,8" FontWeight="SemiBold" Cursor="Hand"
+                            Margin="10,0,0,0" Background="#28A745" Style="{StaticResource HeaderButtonStyle}"
                             ToolTip="View translation statistics"/>
                     <Button Content="💾 Export" Command="{Binding ExportCommand}" 
-                            Margin="10,0,0,0" Background="#6F42C1" Foreground="White" 
-                            BorderThickness="0" Padding="15,8" FontWeight="SemiBold" Cursor="Hand"
+                            Margin="10,0,0,0" Background="#8E44AD" Style="{StaticResource HeaderButtonStyle}"
                             ToolTip="Export translations to file"/>
                     <Button Content="❓ Help" Command="{Binding ShowWelcomeCommand}" 
-                            Margin="10,0,0,0" Background="#17A2B8" Foreground="White" 
-                            BorderThickness="0" Padding="15,8" FontWeight="SemiBold" Cursor="Hand"
+                            Margin="10,0,0,0" Background="#17A2B8" Style="{StaticResource HeaderButtonStyle}"
                             ToolTip="Show help and welcome screen"/>
                     <Button Content="ℹ️ About" Command="{Binding ShowAboutCommand}" 
-                            Margin="10,0,0,0" Background="#6C757D" Foreground="White" 
-                            BorderThickness="0" Padding="15,8" FontWeight="SemiBold" Cursor="Hand"
+                            Margin="10,0,0,0" Background="#6C757D" Style="{StaticResource HeaderButtonStyle}"
                             ToolTip="About this application"/>
                 </StackPanel>
             </Grid>
         </Border>
-        
+
         <!-- Main Content -->
-        <Grid Grid.Row="1">
+        <Grid Grid.Row="1" Margin="15">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="300"/>
-                <ColumnDefinition Width="5"/>
+                <ColumnDefinition Width="250"/>
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
-            
+
             <!-- File List -->
-            <Border Grid.Column="0" Background="#1E1E1E" BorderBrush="#3C3C3C" BorderThickness="0,0,1,0">
-                <Grid>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="*"/>
-                    </Grid.RowDefinitions>
-                    
-                    <StackPanel Grid.Row="0" Margin="15,15,15,10">
-                        <TextBlock Text="Localization Files" FontWeight="Bold" 
-                                   Foreground="White" Margin="0,0,0,10"/>
-                        
-                        <TextBox x:Name="SearchTextBox" 
-                                 Background="#2D2D30" Foreground="White" 
-                                 BorderBrush="#3C3C3C" BorderThickness="1"
-                                 Padding="8,4" FontSize="12"
-                                 TextChanged="OnSearchTextChanged"/>
-                    </StackPanel>
-                    
-                    <ListBox Grid.Row="1" ItemsSource="{Binding Files}" 
+            <Border Grid.Column="0" Background="#252526" CornerRadius="4" Margin="0,0,15,0">
+                <DockPanel>
+                    <!-- Search Box -->
+                    <Border DockPanel.Dock="Top" Background="#2D2D30" Padding="10" BorderThickness="0,0,0,1" BorderBrush="#3E3E42">
+                        <Grid>
+                            <TextBox Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                                     Background="#3C3C3C" Foreground="White" Padding="8,4"
+                                     BorderThickness="0" TextChanged="OnSearchTextChanged">
+                                <TextBox.Resources>
+                                    <Style TargetType="{x:Type Border}">
+                                        <Setter Property="CornerRadius" Value="4"/>
+                                    </Style>
+                                </TextBox.Resources>
+                            </TextBox>
+                            <TextBlock Text="Search files..." Margin="8,4,0,0"
+                                       Foreground="#999999" IsHitTestVisible="False">
+                                <TextBlock.Style>
+                                    <Style TargetType="{x:Type TextBlock}">
+                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding Text, ElementName=SearchBox}" Value="">
+                                                <Setter Property="Visibility" Value="Visible"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                        </Grid>
+                    </Border>
+
+                    <!-- File List -->
+                    <ListBox ItemsSource="{Binding Files}"
                              SelectedItem="{Binding SelectedFile}"
-                             Background="Transparent" BorderThickness="0"
-                             Margin="10,0,10,10">
+                             Background="Transparent"
+                             BorderThickness="0"
+                             Margin="0,10,0,0">
                         <ListBox.ItemTemplate>
                             <DataTemplate>
-                                <Border Background="#2D2D30" Margin="0,2" Padding="10" 
-                                        CornerRadius="4" BorderBrush="#3C3C3C" BorderThickness="1">
-                                    <Grid>
-                                        <Grid.RowDefinitions>
-                                            <RowDefinition Height="Auto"/>
-                                            <RowDefinition Height="Auto"/>
-                                            <RowDefinition Height="Auto"/>
-                                        </Grid.RowDefinitions>
-                                        
-                                        <TextBlock Grid.Row="0" Text="{Binding FileName}" 
-                                                   FontWeight="Bold" Foreground="White" 
-                                                   TextTrimming="CharacterEllipsis"/>
-                                        
-                                        <TextBlock Grid.Row="1" Text="{Binding ProgressText}" 
-                                                   FontSize="12" Foreground="#CCCCCC" 
-                                                   Margin="0,2,0,0"/>
-                                        
-                                        <ProgressBar Grid.Row="2" Value="{Binding ProgressPercentage, Mode=OneWay}" 
-                                                     Height="4" Margin="0,5,0,0" 
-                                                     Background="#1E1E1E" 
-                                                     Foreground="#007ACC"/>
-                                    </Grid>
-                                </Border>
+                                <StackPanel Margin="5">
+                                    <TextBlock Text="{Binding FilePath}" 
+                                               Foreground="White" 
+                                               TextTrimming="CharacterEllipsis"/>
+                                    <TextBlock Text="{Binding LastModified, StringFormat='Modified: {0}'}" 
+                                               Foreground="#CCCCCC" 
+                                               FontSize="11"/>
+                                </StackPanel>
                             </DataTemplate>
                         </ListBox.ItemTemplate>
+                        <ListBox.ItemContainerStyle>
+                            <Style TargetType="ListBoxItem">
+                                <Setter Property="Background" Value="Transparent"/>
+                                <Setter Property="Padding" Value="10"/>
+                                <Style.Triggers>
+                                    <Trigger Property="IsSelected" Value="True">
+                                        <Setter Property="Background" Value="#007ACC"/>
+                                    </Trigger>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter Property="Background" Value="#3E3E42"/>
+                                    </Trigger>
+                                </Style.Triggers>
+                            </Style>
+                        </ListBox.ItemContainerStyle>
                     </ListBox>
-                </Grid>
+                </DockPanel>
             </Border>
-            
-            <!-- Splitter -->
-            <GridSplitter Grid.Column="1" Background="#3C3C3C" HorizontalAlignment="Stretch"/>
-            
-            <!-- Translation Area -->
-            <Grid Grid.Column="2" Background="#1E1E1E">
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="*"/>
-                    <RowDefinition Height="Auto"/>
-                </Grid.RowDefinitions>
-                
-                <!-- Translation Controls -->
-                <Border Grid.Row="0" Background="#2D2D30" Padding="15" BorderBrush="#3C3C3C" BorderThickness="0,0,0,1">
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="Auto"/>
-                        </Grid.ColumnDefinitions>
-                        
-                        <StackPanel Grid.Column="0" Orientation="Horizontal">
-                            <ComboBox Width="120" Margin="0,0,10,0"
-                                      Background="#2D2D30" Foreground="White"
-                                      BorderBrush="#3C3C3C">
-                                <ComboBoxItem Content="English" Tag="en" IsSelected="True"
-                                              Background="#2D2D30" Foreground="White"/>
-                                <ComboBoxItem Content="French" Tag="fr"
-                                              Background="#2D2D30" Foreground="White"/>
-                                <ComboBoxItem Content="German" Tag="de"
-                                              Background="#2D2D30" Foreground="White"/>
-                                <ComboBoxItem Content="Spanish" Tag="es"
-                                              Background="#2D2D30" Foreground="White"/>
-                            </ComboBox>
-                            
-                            <TextBlock Text="→" Foreground="White" VerticalAlignment="Center" Margin="5,0"/>
-                            
-                            <ComboBox Width="120" Margin="10,0,0,0"
-                                      Background="#2D2D30" Foreground="White"
-                                      BorderBrush="#3C3C3C">
-                                <ComboBoxItem Content="Vietnamese" Tag="vi" IsSelected="True"
-                                              Background="#2D2D30" Foreground="White"/>
-                                <ComboBoxItem Content="Chinese" Tag="zh"
-                                              Background="#2D2D30" Foreground="White"/>
-                                <ComboBoxItem Content="Japanese" Tag="ja"
-                                              Background="#2D2D30" Foreground="White"/>
-                                <ComboBoxItem Content="Korean" Tag="ko"
-                                              Background="#2D2D30" Foreground="White"/>
-                            </ComboBox>
-                        </StackPanel>
-                        
-                        <StackPanel Grid.Column="1" Orientation="Horizontal">
-                            <Button Content="🔄 Translate All" Command="{Binding TranslateAllCommand}" 
-                                    Margin="0,0,10,0" Background="#007ACC" Foreground="White" 
-                                    BorderThickness="0" Padding="15,8" FontWeight="SemiBold" Cursor="Hand"
-                                    ToolTip="Translate all entries in the selected file"/>
-                            <Button Content="💾 Save" Command="{Binding SaveCommand}" 
-                                    Background="#28A745" Foreground="White" 
-                                    BorderThickness="0" Padding="15,8" FontWeight="SemiBold" Cursor="Hand"
-                                    ToolTip="Save changes to the original file"/>
-                            <Button Content="🔄 Refresh" Command="{Binding RefreshCommand}" 
-                                    Margin="10,0,0,0" Background="#6F42C1" Foreground="White" 
-                                    BorderThickness="0" Padding="15,8" FontWeight="SemiBold" Cursor="Hand"
-                                    ToolTip="Refresh the current file"/>
-                        </StackPanel>
-                    </Grid>
-                </Border>
-                
-                <!-- Translation Entries -->
-                <DataGrid Grid.Row="1" ItemsSource="{Binding SelectedFile.Entries}" 
-                          AutoGenerateColumns="False" CanUserAddRows="False"
-                          Background="Transparent" GridLinesVisibility="None"
-                          HeadersVisibility="Column" RowHeaderWidth="0"
-                          Margin="10">
+
+            <!-- Translation Grid -->
+            <Border Grid.Column="1" Background="#252526" CornerRadius="4">
+                <DataGrid ItemsSource="{Binding SelectedFile.Entries}"
+                          AutoGenerateColumns="False"
+                          CanUserAddRows="False"
+                          CanUserDeleteRows="False"
+                          HeadersVisibility="Column"
+                          GridLinesVisibility="Horizontal"
+                          Background="Transparent"
+                          BorderThickness="0"
+                          RowHeaderWidth="0">
+                    <DataGrid.Resources>
+                        <Style TargetType="DataGridRow">
+                            <Setter Property="Background" Value="Transparent"/>
+                            <Style.Triggers>
+                                <Trigger Property="IsSelected" Value="True">
+                                    <Setter Property="Background" Value="#007ACC"/>
+                                </Trigger>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter Property="Background" Value="#3E3E42"/>
+                                </Trigger>
+                            </Style.Triggers>
+                        </Style>
+                    </DataGrid.Resources>
                     <DataGrid.Columns>
-                        <DataGridTemplateColumn Header="Key" Width="200" IsReadOnly="True">
+                        <DataGridTextColumn Header="Key" 
+                                          Binding="{Binding Entry.Key}"
+                                          Width="150"
+                                          IsReadOnly="True"/>
+                        <DataGridTemplateColumn Header="Source Text" Width="*">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
-                                    <TextBlock Text="{Binding Key}" 
-                                               Foreground="White" 
-                                               TextWrapping="Wrap" 
-                                               Padding="8,4"
-                                               VerticalAlignment="Center"/>
+                                    <TextBlock Text="{Binding Entry.SourceText}" 
+                                             TextWrapping="Wrap" 
+                                             Margin="4"/>
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>
                         </DataGridTemplateColumn>
-                        
-                        <DataGridTemplateColumn Header="Source" Width="*" IsReadOnly="True">
-                            <DataGridTemplateColumn.CellTemplate>
-                                <DataTemplate>
-                                    <TextBlock Text="{Binding Source}" 
-                                               Foreground="White" 
-                                               TextWrapping="Wrap" 
-                                               Padding="8,4"
-                                               VerticalAlignment="Center"/>
-                                </DataTemplate>
-                            </DataGridTemplateColumn.CellTemplate>
-                        </DataGridTemplateColumn>
-                        
-                        <DataGridTemplateColumn Header="Target" Width="*">
+                        <DataGridTemplateColumn Header="Translation" Width="*">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
                                     <Grid>
-                                        <TextBox Text="{Binding Target, UpdateSourceTrigger=PropertyChanged}" 
-                                                 Background="#2D2D30" Foreground="White" 
-                                                 BorderBrush="#3C3C3C" BorderThickness="1"
-                                                 Padding="8,4" VerticalAlignment="Stretch"
-                                                 TextWrapping="Wrap" AcceptsReturn="True"
-                                                 VerticalScrollBarVisibility="Auto"
-                                                 MinHeight="40"/>
-                                        <TextBlock Text="{Binding StatusIcon}" 
-                                                   HorizontalAlignment="Right" 
-                                                   VerticalAlignment="Top" 
-                                                   Margin="0,4,8,0" 
-                                                   FontSize="16"/>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBox Text="{Binding Entry.TranslatedText, UpdateSourceTrigger=PropertyChanged}"
+                                                TextWrapping="Wrap"
+                                                AcceptsReturn="True"
+                                                Margin="4"/>
+                                        <Button Grid.Column="1" 
+                                                Content="🤖"
+                                                ToolTip="Translate with AI"
+                                                Command="{Binding DataContext.TranslateWithAiCommand, 
+                                                          RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                CommandParameter="{Binding}"
+                                                Margin="4,0"
+                                                Padding="4,2"
+                                                Background="#8E44AD"
+                                                BorderThickness="0"
+                                                Foreground="White">
+                                            <Button.Style>
+                                                <Style TargetType="Button">
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding DataContext.AiEnabled, 
+                                                                     RelativeSource={RelativeSource AncestorType=DataGrid}}" 
+                                                                     Value="False">
+                                                            <Setter Property="IsEnabled" Value="False"/>
+                                                            <Setter Property="Opacity" Value="0.5"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Button.Style>
+                                        </Button>
                                     </Grid>
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>
                         </DataGridTemplateColumn>
+                        <DataGridTextColumn Header="Status" 
+                                          Binding="{Binding Status}"
+                                          Width="100"
+                                          IsReadOnly="True"/>
                     </DataGrid.Columns>
                 </DataGrid>
-                
-                <!-- Status Bar -->
-                <Border Grid.Row="2" Background="#2D2D30" Padding="15" BorderBrush="#3C3C3C" BorderThickness="0,1,0,0">
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="Auto"/>
-                        </Grid.ColumnDefinitions>
-                        
-                        <TextBlock Grid.Column="0" Text="{Binding StatusMessage}" 
-                                   Foreground="#CCCCCC" VerticalAlignment="Center"/>
-                        
-                        <StackPanel Grid.Column="1" Orientation="Horizontal">
-                            <TextBlock Text="Progress: " Foreground="#CCCCCC" VerticalAlignment="Center"/>
-                            <TextBlock Text="{Binding ProgressText}" Foreground="White" VerticalAlignment="Center"/>
-                        </StackPanel>
-                    </Grid>
-                </Border>
-            </Grid>
+            </Border>
         </Grid>
+
+        <!-- Status Bar -->
+        <Border Grid.Row="2" Background="#007ACC" Height="25">
+            <DockPanel LastChildFill="False" Margin="10,0">
+                <TextBlock Text="{Binding StatusMessage}" 
+                           Foreground="White" 
+                           VerticalAlignment="Center"
+                           DockPanel.Dock="Left"/>
+                <TextBlock Text="{Binding ProgressText}" 
+                           Foreground="White" 
+                           VerticalAlignment="Center"
+                           DockPanel.Dock="Right"/>
+            </DockPanel>
+        </Border>
     </Grid>
-    
 </Window>

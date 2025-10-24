@@ -61,8 +61,8 @@ public class ParadoxParser
                 var entry = new LocalizationEntry
                 {
                     Key = key,
-                    Source = value,
-                    Target = string.Empty,
+                    SourceText = value,
+                    TranslatedText = string.Empty,
                     RawLineBefore = line,
                     RawLineAfter = string.Empty
                 };
@@ -94,13 +94,13 @@ public class ParadoxParser
 
         foreach (var entry in entries)
         {
-            if (!string.IsNullOrWhiteSpace(entry.Target))
+            if (!string.IsNullOrWhiteSpace(entry.TranslatedText))
             {
-                sb.AppendLine($"{entry.Key}:0 \"{EscapeQuotes(entry.Target)}\"");
+                sb.AppendLine($"{entry.Key}:0 \"{EscapeQuotes(entry.TranslatedText)}\"");
             }
             else
             {
-                sb.AppendLine($"{entry.Key}:0 \"{EscapeQuotes(entry.Source)}\"");
+                sb.AppendLine($"{entry.Key}:0 \"{EscapeQuotes(entry.SourceText)}\"");
             }
         }
 

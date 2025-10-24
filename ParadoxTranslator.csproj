@@ -1,5 +1,15 @@
-<Project Sdk="Microsoft.NET.Sdk">
 
+
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+  <!-- Copy all non-source artifacts to output. We'll remove XAML and generated sources from the None set so the WPF build can handle them. -->
+  <None Update="**\*.*">
+    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    <CopyToPublishDirectory>Always</CopyToPublishDirectory>
+  </None>
+  <!-- Ensure XAML and generated files are not treated as None (so they remain as Page/Compile for WPF) -->
+  <None Remove="**\*.xaml;**\*.xaml.cs;**\*.g.cs;**\*.xaml.g.cs;**\*.xaml.baml" />
+  </ItemGroup>
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
     <TargetFramework>net8.0-windows</TargetFramework>
@@ -15,6 +25,7 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.Http" Version="8.0.0" />
     <PackageReference Include="System.Text.Json" Version="8.0.0" />
+    <PackageReference Include="WindowsAPICodePack-Shell" Version="1.1.1" />
   </ItemGroup>
 
 </Project>

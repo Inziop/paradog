@@ -6,6 +6,98 @@
         Background="#1E1E1E" Foreground="White">
     
     <Grid>
+        <Grid.Resources>
+            <!-- Local header-style button for settings footer -->
+            <Style x:Key="HeaderButtonStyle" TargetType="Button">
+                <Setter Property="Foreground" Value="White"/>
+                <Setter Property="Background" Value="#007ACC"/>
+                <Setter Property="BorderThickness" Value="0"/>
+                <Setter Property="Padding" Value="12,6"/>
+                <Setter Property="FontWeight" Value="SemiBold"/>
+                <Setter Property="Cursor" Value="Hand"/>
+                <Style.Triggers>
+                    <Trigger Property="IsEnabled" Value="False">
+                        <Setter Property="Background" Value="#2F2F2F"/>
+                        <Setter Property="Foreground" Value="#BEBEBE"/>
+                    </Trigger>
+                </Style.Triggers>
+            </Style>
+
+            <!-- Ensure ComboBoxItems are dark and readable inside settings -->
+            <Style x:Key="SettingsComboBoxItemStyle" TargetType="ComboBoxItem">
+                <Setter Property="Background" Value="#2D2D30" />
+                <Setter Property="Foreground" Value="White" />
+                <Style.Triggers>
+                    <Trigger Property="IsSelected" Value="True">
+                        <Setter Property="Background" Value="#007ACC" />
+                        <Setter Property="Foreground" Value="White" />
+                    </Trigger>
+                    <Trigger Property="IsMouseOver" Value="True">
+                        <Setter Property="Background" Value="#3E3E40" />
+                        <Setter Property="Foreground" Value="White" />
+                    </Trigger>
+                </Style.Triggers>
+            </Style>
+
+            <!-- ComboBox style for settings to ensure collapsed selection is readable -->
+            <Style x:Key="SettingsComboBoxStyle" TargetType="ComboBox">
+                <Setter Property="Background" Value="#2D2D30" />
+                <Setter Property="Foreground" Value="White" />
+                <Setter Property="BorderBrush" Value="#3C3C3C" />
+                <Setter Property="Padding" Value="6,2" />
+                <Setter Property="ItemContainerStyle" Value="{StaticResource SettingsComboBoxItemStyle}" />
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="ComboBox">
+                            <Grid>
+                                <Border x:Name="Bd" Background="{TemplateBinding Background}"
+                                        BorderBrush="{TemplateBinding BorderBrush}"
+                                        BorderThickness="{TemplateBinding BorderThickness}">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <!-- Important: Foreground bound to template Foreground -->
+                                        <ContentPresenter Grid.Column="0"
+                                            Content="{TemplateBinding SelectionBoxItem}"
+                                            ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}"
+                                            ContentTemplateSelector="{TemplateBinding ItemTemplateSelector}"
+                                            VerticalAlignment="Center"
+                                            Margin="{TemplateBinding Padding}"
+                                            HorizontalAlignment="Left"/>
+                                        <ToggleButton Grid.Column="1"
+                                            IsChecked="{Binding Path=IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}"
+                                            Width="20" Height="20"
+                                            Background="Transparent"
+                                            BorderThickness="0">
+                                            <Path Data="M0,0 L4,4 L8,0" 
+                                                Stroke="White" StrokeThickness="2"
+                                                HorizontalAlignment="Center"
+                                                VerticalAlignment="Center"/>
+                                        </ToggleButton>
+                                    </Grid>
+                                </Border>
+                                <Popup Name="PART_Popup"
+                                       Placement="Bottom"
+                                       IsOpen="{Binding Path=IsDropDownOpen, RelativeSource={RelativeSource TemplatedParent}}"
+                                       AllowsTransparency="True"
+                                       Focusable="False"
+                                       PopupAnimation="Slide">
+                                    <Border Background="{TemplateBinding Background}"
+                                            BorderBrush="{TemplateBinding BorderBrush}"
+                                            BorderThickness="1">
+                                        <ScrollViewer SnapsToDevicePixels="True">
+                                            <ItemsPresenter KeyboardNavigation.DirectionalNavigation="Contained"/>
+                                        </ScrollViewer>
+                                    </Border>
+                                </Popup>
+                            </Grid>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+        </Grid.Resources>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
@@ -28,26 +120,33 @@
                 <GroupBox Header="Translation Engine" Margin="0,0,0,20" 
                           Foreground="White" BorderBrush="#3C3C3C">
                     <StackPanel Margin="15">
-                        <TextBlock Text="Select your preferred translation service:" 
-                                   Margin="0,0,0,10" Foreground="#CCCCCC"/>
+                            <TextBlock Text="Select your preferred translation service:" 
+                                       Margin="0,0,0,10" Foreground="#CCCCCC"/>
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                                    <CheckBox x:Name="EnableAICheckBox" Content="Enable AI translation" Foreground="White" Margin="0,0,15,0"/>
+                                    <TextBlock Text="(" Foreground="#888888" VerticalAlignment="Center"/>
+                                    <TextBlock Text="If enabled, translations use the configured AI engine and API key" Foreground="#888888" VerticalAlignment="Center"/>
+                                    <TextBlock Text=")" Foreground="#888888" VerticalAlignment="Center"/>
+                                </StackPanel>
+
+                    <ComboBox x:Name="EngineComboBox" Width="200" Margin="0,0,0,15"
+                            Style="{StaticResource SettingsComboBoxStyle}">
+                        <ComboBoxItem Content="Google Translate" Tag="google" IsSelected="True"
+                                     Background="#2D2D30" Foreground="White"/>
+                        <ComboBoxItem Content="Google AI Studio (Gemini)" Tag="gemini"
+                                     Background="#2D2D30" Foreground="White"/>
+                        <ComboBoxItem Content="DeepL" Tag="deepl"
+                                     Background="#2D2D30" Foreground="White"/>
+                        <ComboBoxItem Content="OpenAI GPT" Tag="openai"
+                                     Background="#2D2D30" Foreground="White"/>
+                    </ComboBox>
                         
-                        <ComboBox x:Name="EngineComboBox" Width="200" Margin="0,0,0,15"
-                                  Background="#2D2D30" Foreground="White" 
-                                  BorderBrush="#3C3C3C">
-                            <ComboBoxItem Content="Google Translate" Tag="Google" IsSelected="True"
-                                          Background="#2D2D30" Foreground="White"/>
-                            <ComboBoxItem Content="DeepL" Tag="DeepL"
-                                          Background="#2D2D30" Foreground="White"/>
-                            <ComboBoxItem Content="Microsoft Translator" Tag="Microsoft"
-                                          Background="#2D2D30" Foreground="White"/>
-                            <ComboBoxItem Content="OpenAI GPT" Tag="OpenAI"
-                                          Background="#2D2D30" Foreground="White"/>
-                        </ComboBox>
-                        
-                        <TextBlock Text="Note: Some services may require API keys for better performance." 
-                                   FontSize="12" Foreground="#888888" Margin="0,5,0,0"/>
-                    </StackPanel>
+                            <TextBlock Text="Note: Each service requires its own API key. Google AI Studio (Gemini) provides more contextual translations." 
+                                       FontSize="12" Foreground="#888888" Margin="0,5,0,0"/>
+                        </StackPanel>
                 </GroupBox>
+
+                <!-- Glossary removed to restore original settings UI -->
                 
                 <!-- API Configuration -->
                 <GroupBox Header="API Configuration" Margin="0,0,0,20" 
@@ -68,9 +167,8 @@
                             <TextBox Grid.Column="1" x:Name="GoogleApiKeyTextBox" 
                                      Background="#2D2D30" Foreground="White" 
                                      BorderBrush="#3C3C3C" Padding="8,4" Margin="0,0,10,0"/>
-                            <Button Grid.Column="2" Content="Test" Width="60" 
-                                    Background="#007ACC" Foreground="White" 
-                                    BorderThickness="0" Padding="8,4"/>
+                <Button Grid.Column="2" Content="Test" Width="60" 
+                    Style="{StaticResource HeaderButtonStyle}" Click="OnTestGoogleClick"/>
                         </Grid>
                         
                         <Grid Margin="0,10,0,0">
@@ -85,10 +183,46 @@
                             <TextBox Grid.Column="1" x:Name="DeepLApiKeyTextBox" 
                                      Background="#2D2D30" Foreground="White" 
                                      BorderBrush="#3C3C3C" Padding="8,4" Margin="0,0,10,0"/>
-                            <Button Grid.Column="2" Content="Test" Width="60" 
-                                    Background="#007ACC" Foreground="White" 
-                                    BorderThickness="0" Padding="8,4"/>
+                <Button Grid.Column="2" Content="Test" Width="60" 
+                    Style="{StaticResource HeaderButtonStyle}" Click="OnTestDeepLClick"/>
                         </Grid>
+
+                        <Grid Margin="0,10,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            
+                            <TextBlock Grid.Column="0" Text="Gemini API Key:" 
+                                       VerticalAlignment="Center" Margin="0,0,10,0"/>
+                            <TextBox Grid.Column="1" x:Name="GeminiApiKeyTextBox" 
+                                     Background="#2D2D30" Foreground="White" 
+                                     BorderBrush="#3C3C3C" Padding="8,4" Margin="0,0,10,0"/>
+                <Button Grid.Column="2" Content="Test" Width="60" 
+                    Style="{StaticResource HeaderButtonStyle}" Click="OnTestGeminiClick"/>
+                        </Grid>
+
+                        <!-- Gemini Endpoint (expandable/collapsible) -->
+                        <Expander Header="Advanced: Gemini Endpoint" 
+                                  Margin="0,10,0,0"
+                                  Background="Transparent"
+                                  Foreground="#CCCCCC"
+                                  BorderThickness="0">
+                            <Grid Margin="0,10,0,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                
+                                <TextBlock Grid.Column="0" Text="API Endpoint:" 
+                                           VerticalAlignment="Center" Margin="0,0,10,0"/>
+                                <TextBox Grid.Column="1" x:Name="GeminiEndpointTextBox" 
+                                         Background="#2D2D30" Foreground="White" 
+                                         BorderBrush="#3C3C3C" Padding="8,4"
+                                         Text="https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent"/>
+                            </Grid>
+                        </Expander>
                     </StackPanel>
                 </GroupBox>
                 
@@ -124,14 +258,13 @@
                             <TextBlock Text="Theme:" VerticalAlignment="Center" 
                                        Margin="0,0,10,0"/>
                             <ComboBox x:Name="ThemeComboBox" Width="150" 
-                                      Background="#2D2D30" Foreground="White" 
-                                      BorderBrush="#3C3C3C">
+                                              Style="{StaticResource SettingsComboBoxStyle}">
                                 <ComboBoxItem Content="Dark" Tag="Dark" IsSelected="True"
-                                              Background="#2D2D30" Foreground="White"/>
+                                                      Background="#2D2D30" Foreground="White"/>
                                 <ComboBoxItem Content="Light" Tag="Light"
-                                              Background="#2D2D30" Foreground="White"/>
+                                                      Background="#2D2D30" Foreground="White"/>
                                 <ComboBoxItem Content="Auto" Tag="Auto"
-                                              Background="#2D2D30" Foreground="White"/>
+                                                      Background="#2D2D30" Foreground="White"/>
                             </ComboBox>
                         </StackPanel>
                         
@@ -149,14 +282,13 @@
                     <StackPanel Margin="15">
                         <TextBlock Text="Translation Quality:" Margin="0,0,0,10" Foreground="#CCCCCC"/>
                         <ComboBox x:Name="QualityComboBox" Width="200" 
-                                  Background="#2D2D30" Foreground="White" 
-                                  BorderBrush="#3C3C3C" Margin="0,0,0,15">
+                            Style="{StaticResource SettingsComboBoxStyle}" Margin="0,0,0,15">
                             <ComboBoxItem Content="Fast (Lower Quality)" Tag="Fast"
-                                          Background="#2D2D30" Foreground="White"/>
+                                Background="#2D2D30" Foreground="White"/>
                             <ComboBoxItem Content="Balanced" Tag="Balanced" IsSelected="True"
-                                          Background="#2D2D30" Foreground="White"/>
+                                Background="#2D2D30" Foreground="White"/>
                             <ComboBoxItem Content="High Quality (Slower)" Tag="High"
-                                          Background="#2D2D30" Foreground="White"/>
+                                Background="#2D2D30" Foreground="White"/>
                         </ComboBox>
                         
                         <CheckBox x:Name="EnableLoggingCheckBox" Content="Enable detailed logging" 
@@ -171,17 +303,23 @@
         
         <!-- Footer -->
         <Border Grid.Row="2" Background="#2D2D30" Padding="20" BorderBrush="#3C3C3C" BorderThickness="0,1,0,0">
-            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                <Button Content="Reset to Defaults" Margin="0,0,10,0" 
-                        Background="#666666" Foreground="White" 
-                        BorderThickness="0" Padding="15,8" Cursor="Hand"/>
-                <Button Content="Cancel" Margin="0,0,10,0" 
-                        Background="#666666" Foreground="White" 
-                        BorderThickness="0" Padding="15,8" Cursor="Hand"/>
-                <Button Content="Save Settings" 
-                        Background="#007ACC" Foreground="White" 
-                        BorderThickness="0" Padding="15,8" Cursor="Hand"/>
-            </StackPanel>
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+            <Button Content="Reset to Defaults" Margin="0,0,10,0" 
+                Background="#666666" Foreground="White" 
+                BorderThickness="0" Padding="15,8" Cursor="Hand"
+                Style="{StaticResource HeaderButtonStyle}"
+                Click="OnResetClick"/>
+            <Button Content="Cancel" Margin="0,0,10,0" 
+                Background="#666666" Foreground="White" 
+                BorderThickness="0" Padding="15,8" Cursor="Hand"
+                Style="{StaticResource HeaderButtonStyle}"
+                Click="OnCancelClick"/>
+            <Button Content="Save Settings" 
+                Background="#007ACC" Foreground="White" 
+                BorderThickness="0" Padding="15,8" Cursor="Hand"
+                Style="{StaticResource HeaderButtonStyle}"
+                Click="OnSaveClick"/>
+        </StackPanel>
         </Border>
     </Grid>
 </Window>

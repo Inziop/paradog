@@ -19,6 +19,14 @@
             <Setter Property="BorderBrush" Value="#3C3C3C"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="Padding" Value="5"/>
+            <Setter Property="CaretBrush" Value="White"/>
+            <Setter Property="SelectionBrush" Value="#0050A0"/>
+            <Style.Triggers>
+                <Trigger Property="IsEnabled" Value="False">
+                    <Setter Property="Background" Value="#2B2B2B"/>
+                    <Setter Property="Foreground" Value="#888888"/>
+                </Trigger>
+            </Style.Triggers>
         </Style>
         
         <Style TargetType="ComboBox">
@@ -27,6 +35,12 @@
             <Setter Property="BorderBrush" Value="#3C3C3C"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="Padding" Value="5"/>
+            <Style.Triggers>
+                <Trigger Property="IsEnabled" Value="False">
+                    <Setter Property="Background" Value="#2B2B2B"/>
+                    <Setter Property="Foreground" Value="#888888"/>
+                </Trigger>
+            </Style.Triggers>
         </Style>
 
         <!-- Style for ComboBoxItem -->
@@ -43,6 +57,8 @@
                 </Trigger>
             </Style.Triggers>
         </Style>
+
+        <!-- Header button style removed to restore original per-window styles -->
         
         <Style TargetType="DataGrid">
             <Setter Property="Background" Value="#1E1E1E"/>

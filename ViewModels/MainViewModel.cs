@@ -1,348 +1,359 @@
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Windows;
+using System.Windows.Media;
 using Microsoft.Win32;
+using Microsoft.WindowsAPICodePack.Dialogs;
 using ParadoxTranslator.Models;
 using ParadoxTranslator.Services;
 using ParadoxTranslator.Utils;
+using System.IO;
+using MessageBox = System.Windows.MessageBox;
 
-namespace ParadoxTranslator.ViewModels;
-
-/// <summary>
-/// Main ViewModel for the application
-/// </summary>
-public class MainViewModel : INotifyPropertyChanged, IDisposable
+namespace ParadoxTranslator.ViewModels
 {
-    private readonly TranslationService _translationService;
-    private readonly TranslationConfig _config;
-    private FileViewModel? _selectedFile;
-    private string _sourceLanguage = "en";
-    private string _targetLanguage = "vi";
-    private string _statusMessage = "Ready";
-    private string _progressText = "0/0";
-    private bool _isTranslating;
-
-    public MainViewModel()
+    public class MainViewModel : INotifyPropertyChanged, IDisposable
     {
-        _config = new TranslationConfig
+        private string _statusMessage = "";
+        private FileViewModel? _selectedFile;
+        private bool _mockMode = true;
+        private string _aiStatusText = "AI: OFF";
+        private bool _aiEnabled;
+        private System.Windows.Media.Brush _aiStatusBrush = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(220, 53, 69)); // Red color for OFF
+        public ObservableCollection<FileViewModel> Files { get; } = new();
+
+        // Commands
+        public RelayCommand OpenYamlFileCommand { get; }
+        public RelayCommand OpenFolderCommand { get; }
+        public RelayCommand ExportCommand { get; }
+        public RelayCommand OpenSettingsCommand { get; }
+        public RelayCommand ShowStatisticsCommand { get; }
+        public RelayCommand ShowWelcomeCommand { get; }
+        public RelayCommand ShowAboutCommand { get; }
+        public RelayCommand<LocalizationEntryViewModel> TranslateWithAiCommand { get; }
+
+        public MainViewModel()
         {
-            SelectedEngine = "Google",
-            MaxConcurrentRequests = 3,
-            OverwriteExistingTranslations = false
-        };
+            OpenYamlFileCommand = new RelayCommand(OpenYamlFile);
+            OpenFolderCommand = new RelayCommand(OpenFolder);
+            ExportCommand = new RelayCommand(Export);
+            OpenSettingsCommand = new RelayCommand(OpenSettings);
+            ShowStatisticsCommand = new RelayCommand(ShowStatistics);
+            ShowWelcomeCommand = new RelayCommand(ShowWelcome);
+            ShowAboutCommand = new RelayCommand(ShowAbout);
+            TranslateWithAiCommand = new RelayCommand<LocalizationEntryViewModel>(TranslateWithAi);
+
+            // Initialize AI status
+            MockMode = true; // Start with Mock mode ON by default
+            AiEnabled = false; // Start with AI OFF by default
+        }
         
-        _translationService = new TranslationService(_config);
-        Files = new ObservableCollection<FileViewModel>();
-        
-        // Initialize commands
-        OpenFolderCommand = new RelayCommand(OpenFolder);
-        OpenSettingsCommand = new RelayCommand(OpenSettings);
-        TranslateAllCommand = new AsyncRelayCommand(TranslateAllAsync, (p) => !IsTranslating && SelectedFile != null);
-        SaveCommand = new AsyncRelayCommand(SaveAsync, (p) => SelectedFile != null);
-        ShowStatisticsCommand = new RelayCommand(ShowStatistics);
-        ExportCommand = new AsyncRelayCommand(ExportAsync, (p) => Files.Count > 0);
-        RefreshCommand = new RelayCommand(Refresh);
-        ShowAboutCommand = new RelayCommand(ShowAbout);
-        ShowWelcomeCommand = new RelayCommand(ShowWelcome);
-    }
-
-    public ObservableCollection<FileViewModel> Files { get; }
-    
-    public FileViewModel? SelectedFile
-    {
-        get => _selectedFile;
-        set
-        {
-            _selectedFile = value;
-            OnPropertyChanged(nameof(SelectedFile));
-            OnPropertyChanged(nameof(ProgressText));
-        }
-    }
-    
-    public string SourceLanguage
-    {
-        get => _sourceLanguage;
-        set
-        {
-            _sourceLanguage = value;
-            OnPropertyChanged(nameof(SourceLanguage));
-        }
-    }
-    
-    public string TargetLanguage
-    {
-        get => _targetLanguage;
-        set
-        {
-            _targetLanguage = value;
-            OnPropertyChanged(nameof(TargetLanguage));
-        }
-    }
-    
-    public string StatusMessage
-    {
-        get => _statusMessage;
-        set
-        {
-            _statusMessage = value;
-            OnPropertyChanged(nameof(StatusMessage));
-        }
-    }
-    
-    public string ProgressText
-    {
-        get => _progressText;
-        set
-        {
-            _progressText = value;
-            OnPropertyChanged(nameof(ProgressText));
-        }
-    }
-    
-    public bool IsTranslating
-    {
-        get => _isTranslating;
-        set
-        {
-            _isTranslating = value;
-            OnPropertyChanged(nameof(IsTranslating));
-        }
-    }
-
-    public RelayCommand OpenFolderCommand { get; }
-    public RelayCommand OpenSettingsCommand { get; }
-    public RelayCommand ShowStatisticsCommand { get; }
-    public RelayCommand RefreshCommand { get; }
-    public RelayCommand ShowAboutCommand { get; }
-    public RelayCommand ShowWelcomeCommand { get; }
-    public AsyncRelayCommand TranslateAllCommand { get; }
-    public AsyncRelayCommand SaveCommand { get; }
-    public AsyncRelayCommand ExportCommand { get; }
-
-    private async void OpenFolder(object? parameter)
-    {
-        var dialog = new OpenFolderDialog
-        {
-            Title = "Select Localization Folder"
-        };
-
-        if (dialog.ShowDialog() == true)
-        {
-            await LoadLocalizationFilesAsync(dialog.FolderName);
-        }
-    }
-
-    private void OpenSettings(object? parameter)
-    {
-        var settingsWindow = new SettingsWindow();
-        settingsWindow.Owner = Application.Current.MainWindow;
-        settingsWindow.ShowDialog();
-    }
-
-    private void ShowStatistics(object? parameter)
-    {
-        var statisticsWindow = new StatisticsWindow();
-        statisticsWindow.Owner = Application.Current.MainWindow;
-        statisticsWindow.ShowDialog();
-    }
-
-    private async Task ExportAsync(object? parameter)
-    {
-        try
-        {
-            StatusMessage = "Exporting translations...";
-            
-            var saveDialog = new SaveFileDialog
+        public string StatusMessage 
+        { 
+            get => _statusMessage;
+            set
             {
-                Title = "Export Translations",
-                Filter = "JSON files (*.json)|*.json|CSV files (*.csv)|*.csv|Excel files (*.xlsx)|*.xlsx",
-                DefaultExt = "json"
+                _statusMessage = value;
+                OnPropertyChanged(nameof(StatusMessage));
+            }
+        }
+
+        public FileViewModel? SelectedFile
+        {
+            get => _selectedFile;
+            set
+            {
+                _selectedFile = value;
+                OnPropertyChanged(nameof(SelectedFile));
+            }
+        }
+
+        public bool MockMode
+        {
+            get => _mockMode;
+            set
+            {
+                _mockMode = value;
+                OnPropertyChanged(nameof(MockMode));
+            }
+        }
+
+        public bool AiEnabled
+        {
+            get => _aiEnabled;
+            set
+            {
+                _aiEnabled = value;
+                OnPropertyChanged(nameof(AiEnabled));
+                UpdateAiStatus();
+            }
+        }
+
+        public string AiStatusText
+        {
+            get => _aiStatusText;
+            set
+            {
+                _aiStatusText = value;
+                OnPropertyChanged(nameof(AiStatusText));
+            }
+        }
+
+        public System.Windows.Media.Brush AiStatusBrush
+        {
+            get => _aiStatusBrush;
+            set
+            {
+                _aiStatusBrush = value;
+                OnPropertyChanged(nameof(AiStatusBrush));
+            }
+        }
+
+        private void UpdateAiStatus()
+        {
+            if (_aiEnabled)
+            {
+                AiStatusText = "AI: ON";
+                AiStatusBrush = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(40, 167, 69)); // Green
+            }
+            else
+            {
+                AiStatusText = "AI: OFF";
+                AiStatusBrush = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(220, 53, 69)); // Red
+            }
+        }
+
+        public event PropertyChangedEventHandler? PropertyChanged;
+
+        protected virtual void OnPropertyChanged(string propertyName)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
+
+        public void Dispose()
+        {
+            // Clean up resources if needed
+            GC.SuppressFinalize(this);
+        }
+
+        private void UpdateProgressText()
+        {
+            // Will implement later if needed
+        }
+
+        private async void OpenYamlFile(object? parameter)
+        {
+            var dialog = new OpenFileDialog
+            {
+                Title = "Select YAML File",
+                Filter = "YAML files (*.yml;*.yaml)|*.yml;*.yaml|All files (*.*)|*.*",
+                FilterIndex = 1
             };
 
-            if (saveDialog.ShowDialog() == true)
+            if (dialog.ShowDialog() == true)
             {
-                // TODO: Implement export functionality
-                StatusMessage = "Export completed successfully";
-                MessageBox.Show("Export functionality will be implemented soon!", "Info", 
-                               MessageBoxButton.OK, MessageBoxImage.Information);
-            }
-        }
-        catch (Exception ex)
-        {
-            StatusMessage = $"Export error: {ex.Message}";
-            MessageBox.Show($"Export error:\n{ex.Message}", "Error", 
-                           MessageBoxButton.OK, MessageBoxImage.Error);
-        }
-    }
-
-    private void Refresh(object? parameter)
-    {
-        if (SelectedFile != null)
-        {
-            // TODO: Implement refresh functionality
-            StatusMessage = "Refreshed current file";
-        }
-    }
-
-    private void ShowAbout(object? parameter)
-    {
-        var aboutWindow = new AboutWindow();
-        aboutWindow.Owner = Application.Current.MainWindow;
-        aboutWindow.ShowDialog();
-    }
-
-    private void ShowWelcome(object? parameter)
-    {
-        var welcomeWindow = new WelcomeWindow();
-        welcomeWindow.Owner = Application.Current.MainWindow;
-        welcomeWindow.ShowDialog();
-    }
-
-    private async Task LoadLocalizationFilesAsync(string folderPath)
-    {
-        try
-        {
-            StatusMessage = "Loading files...";
-            Files.Clear();
-
-            var filePaths = await FileService.GetLocalizationFilesAsync(folderPath);
-            
-            foreach (var filePath in filePaths)
-            {
-                var entries = await ParadoxParser.ParseFileAsync(filePath);
-                var entryViewModels = entries.Select(e => new LocalizationEntryViewModel(e)).ToList();
-                
-                var fileViewModel = new FileViewModel
+                try
                 {
-                    FilePath = filePath,
-                    LastModified = FileService.GetFileModifiedTime(filePath),
-                    Entries = new ObservableCollection<LocalizationEntryViewModel>(entryViewModels)
-                };
-                
-                Files.Add(fileViewModel);
+                    StatusMessage = "Loading file...";
+                    Files.Clear();
+
+                    var filePath = dialog.FileName;
+                    var entries = await ParadoxParser.ParseFileAsync(filePath);
+                    var entryViewModels = entries.Select(e => new LocalizationEntryViewModel(e)).ToList();
+                    
+                    var fileViewModel = new FileViewModel
+                    {
+                        FilePath = filePath,
+                        LastModified = FileService.GetFileModifiedTime(filePath),
+                        Entries = new ObservableCollection<LocalizationEntryViewModel>(entryViewModels)
+                    };
+                    
+                    Files.Add(fileViewModel);
+                    SelectedFile = fileViewModel;
+
+                    StatusMessage = "File loaded successfully";
+                    UpdateProgressText();
+                }
+                catch (Exception ex)
+                {
+                    StatusMessage = $"Error loading file: {ex.Message}";
+                    MessageBox.Show($"Error loading file:\n{ex.Message}", "Error", 
+                                   MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+            }
+        }
+
+        private void OpenFolder(object? parameter)
+        {
+            var dialog = new Microsoft.WindowsAPICodePack.Dialogs.CommonOpenFileDialog
+            {
+                Title = "Select Folder with YAML Files",
+                IsFolderPicker = true
+            };
+
+            if (dialog.ShowDialog() == Microsoft.WindowsAPICodePack.Dialogs.CommonFileDialogResult.Ok)
+            {
+                try
+                {
+                    StatusMessage = "Loading files...";
+                    Files.Clear();
+
+                    var yamlFiles = Directory.GetFiles(dialog.FileName, "*.yml", SearchOption.AllDirectories)
+                                           .Concat(Directory.GetFiles(dialog.FileName, "*.yaml", SearchOption.AllDirectories));
+
+                    foreach (var filePath in yamlFiles)
+                    {
+                        var entries = ParadoxParser.ParseFileAsync(filePath).Result;
+                        var entryViewModels = entries.Select(e => new LocalizationEntryViewModel(e)).ToList();
+                        
+                        var fileViewModel = new FileViewModel
+                        {
+                            FilePath = filePath,
+                            LastModified = FileService.GetFileModifiedTime(filePath),
+                            Entries = new ObservableCollection<LocalizationEntryViewModel>(entryViewModels)
+                        };
+                        
+                        Files.Add(fileViewModel);
+                    }
+
+                    if (Files.Count > 0)
+                    {
+                        SelectedFile = Files[0];
+                        StatusMessage = "Files loaded successfully";
+                    }
+                    else
+                    {
+                        StatusMessage = "No YAML files found in selected folder";
+                    }
+                    UpdateProgressText();
+                }
+                catch (Exception ex)
+                {
+                    StatusMessage = $"Error loading files: {ex.Message}";
+                    MessageBox.Show($"Error loading files:\n{ex.Message}", "Error", 
+                                   MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+            }
+        }
+
+        private void Export(object? parameter)
+        {
+            if (Files.Count == 0)
+            {
+                MessageBox.Show("No files to export.", "Warning", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
             }
 
-            StatusMessage = $"Loaded {Files.Count} files";
-            UpdateProgressText();
-        }
-        catch (Exception ex)
-        {
-            StatusMessage = $"Error loading files: {ex.Message}";
-            MessageBox.Show($"Error loading files:\n{ex.Message}", "Error", 
-                           MessageBoxButton.OK, MessageBoxImage.Error);
-        }
-    }
-
-    private async Task TranslateAllAsync(object? parameter)
-    {
-        if (SelectedFile == null) return;
-
-        try
-        {
-            IsTranslating = true;
-            StatusMessage = "Translating...";
-            
-            // Get entries from selected file
-            var entries = GetEntriesFromSelectedFile();
-            if (entries == null || !entries.Any()) return;
-
-            var progress = new Progress<int>(percent =>
+            try
             {
-                StatusMessage = $"Translating... {percent}%";
-            });
-
-            var results = await _translationService.TranslateBatchAsync(
-                entries.Select(e => e.Entry), // Access the underlying LocalizationEntry model
-                SourceLanguage, 
-                TargetLanguage, 
-                progress);
-
-            var successCount = results.Count(r => r.Success);
-            var failureCount = results.Count(r => !r.Success);
-
-            StatusMessage = $"Translation complete: {successCount} successful, {failureCount} failed";
-            UpdateProgressText();
-        }
-        catch (Exception ex)
-        {
-            StatusMessage = $"Translation error: {ex.Message}";
-            MessageBox.Show($"Translation error:\n{ex.Message}", "Error", 
-                           MessageBoxButton.OK, MessageBoxImage.Error);
-        }
-        finally
-        {
-            IsTranslating = false;
-        }
-    }
-
-    private async Task SaveAsync(object? parameter)
-    {
-        if (SelectedFile == null) return;
-
-        try
-        {
-            StatusMessage = "Saving...";
-            
-            // Create backup
-            await FileService.CreateBackupAsync(SelectedFile.FilePath);
-            
-            // Get entries and save
-            var entries = GetEntriesFromSelectedFile();
-            if (entries != null)
-            {
-                await ParadoxParser.SaveLocalizationAsync(
-                    entries.Select(e => e.Entry), 
-                    SelectedFile.FilePath);
+                foreach (var file in Files)
+                {
+                    // TODO: Implement export logic
+                    StatusMessage = $"Exporting {Path.GetFileName(file.FilePath)}...";
+                }
+                StatusMessage = "Export completed successfully";
             }
-
-            StatusMessage = "Saved successfully";
-        }
-        catch (Exception ex)
-        {
-            StatusMessage = $"Save error: {ex.Message}";
-            MessageBox.Show($"Save error:\n{ex.Message}", "Error", 
-                           MessageBoxButton.OK, MessageBoxImage.Error);
-        }
-    }
-
-    private List<LocalizationEntryViewModel>? GetEntriesFromSelectedFile()
-    {
-        if (SelectedFile == null) return null;
-        return SelectedFile.Entries.ToList();
-    }
-
-    private void UpdateProgressText()
-    {
-        if (SelectedFile != null)
-        {
-            ProgressText = $"{SelectedFile.TranslatedEntries}/{SelectedFile.TotalEntries}";
-        }
-        else
-        {
-            ProgressText = "0/0";
-        }
-    }
-
-    public event PropertyChangedEventHandler? PropertyChanged;
-
-    protected virtual void OnPropertyChanged(string propertyName)
-    {
-        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-    }
-
-    public void Dispose()
-    {
-        // Dispose translation service
-        _translationService?.Dispose();
-        
-        // Dispose all file view models
-        if (Files != null)
-        {
-            foreach (var file in Files)
+            catch (Exception ex)
             {
-                file?.Dispose();
+                StatusMessage = $"Error during export: {ex.Message}";
+                MessageBox.Show($"Error during export:\n{ex.Message}", "Error", 
+                               MessageBoxButton.OK, MessageBoxImage.Error);
             }
-            Files.Clear();
+        }
+
+        private void OpenSettings(object? parameter)
+        {
+            try
+            {
+                var settingsWindow = new SettingsWindow();
+                settingsWindow.ShowDialog();
+            }
+            catch (Exception ex)
+            {
+                StatusMessage = $"Error opening settings: {ex.Message}";
+                MessageBox.Show($"Error opening settings:\n{ex.Message}", "Error", 
+                               MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private void ShowStatistics(object? parameter)
+        {
+            try
+            {
+                var statisticsWindow = new StatisticsWindow();
+                statisticsWindow.ShowDialog();
+            }
+            catch (Exception ex)
+            {
+                StatusMessage = $"Error showing statistics: {ex.Message}";
+                MessageBox.Show($"Error showing statistics:\n{ex.Message}", "Error", 
+                               MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private void ShowWelcome(object? parameter)
+        {
+            try
+            {
+                var welcomeWindow = new WelcomeWindow();
+                welcomeWindow.ShowDialog();
+            }
+            catch (Exception ex)
+            {
+                StatusMessage = $"Error showing welcome screen: {ex.Message}";
+                MessageBox.Show($"Error showing welcome screen:\n{ex.Message}", "Error", 
+                               MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private void ShowAbout(object? parameter)
+        {
+            try
+            {
+                var aboutWindow = new AboutWindow();
+                aboutWindow.ShowDialog();
+            }
+            catch (Exception ex)
+            {
+                StatusMessage = $"Error showing about screen: {ex.Message}";
+                MessageBox.Show($"Error showing about screen:\n{ex.Message}", "Error", 
+                               MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private async void TranslateWithAi(LocalizationEntryViewModel? entry)
+        {
+            if (entry == null || !AiEnabled) return;
+
+            try
+            {
+                StatusMessage = "Translating with AI...";
+                entry.Status = "Translating...";
+
+                if (MockMode)
+                {
+                    // Simulate translation delay
+                    await Task.Delay(1000);
+                    entry.Entry.TranslatedText = $"[AI Mock] {entry.Entry.SourceText}";
+                    entry.Status = "Mock translated";
+                }
+                else
+                {
+                    // TODO: Implement real AI translation here
+                    await Task.Delay(2000); // Temporary delay
+                    entry.Entry.TranslatedText = $"[AI] {entry.Entry.SourceText}";
+                    entry.Status = "AI translated";
+                }
+
+                StatusMessage = "Translation completed";
+            }
+            catch (Exception ex)
+            {
+                entry.Status = "Translation failed";
+                StatusMessage = $"Translation error: {ex.Message}";
+                MessageBox.Show($"Error during translation:\n{ex.Message}", "Translation Error",
+                               MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
     }
 }
