@@ -382,6 +382,24 @@
                         
                         <CheckBox x:Name="ShowDebugInfoCheckBox" Content="Show debug information" 
                                   Foreground="White" FontSize="13" Margin="0,0,0,12" IsChecked="False"/>
+                        
+                        <!-- Translation Memory Limit -->
+                        <TextBlock x:Name="MemoryLimitLabel" Text="Translation Memory Limit (entries):" 
+                                   Foreground="#CCCCCC" FontSize="13" Margin="0,0,0,8"/>
+                        <Grid Margin="0,0,0,12">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <Slider x:Name="MemoryLimitSlider" Grid.Column="0"
+                                    Minimum="20000" Maximum="1500000" 
+                                    TickFrequency="10000" IsSnapToTickEnabled="True"
+                                    Value="100000" Margin="0,0,12,0"
+                                    ValueChanged="OnMemoryLimitChanged"/>
+                            <TextBlock Grid.Column="1" x:Name="MemoryLimitValueText" 
+                                       Text="100,000" Foreground="White" FontSize="13" 
+                                       VerticalAlignment="Center" MinWidth="80" TextAlignment="Right"/>
+                        </Grid>
                     </StackPanel>
                 </GroupBox>
             </StackPanel>

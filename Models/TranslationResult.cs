@@ -41,6 +41,7 @@ public class TranslationConfig
     public string SourceLanguage { get; set; } = "en";
     public string TargetLanguage { get; set; } = "vi";
     public string AppLanguage { get; set; } = "en"; // en or vi
+    public int TranslationMemoryLimit { get; set; } = 100000; // Default 100k entries (min: 20k, max: 1.5M)
 
     // Quality-based timeout calculation
     public int GetQualityTimeout()
