@@ -12,6 +12,7 @@ using MessageBox = System.Windows.MessageBox;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
+using System.Windows.Threading;
 
 namespace ParadoxTranslator.ViewModels
 {
@@ -25,6 +26,11 @@ namespace ParadoxTranslator.ViewModels
         private string _targetLanguage = "vi";
         private System.Windows.Media.Brush _aiStatusBrush = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(220, 53, 69)); // Red color for OFF
         public ObservableCollection<FileViewModel> Files { get; } = new();
+
+        // Autosave (debounced) state
+        private readonly DispatcherTimer _autosaveTimer = new DispatcherTimer();
+        private bool _pendingAutosave;
+        private readonly HashSet<LocalizationEntryViewModel> _watchedEntries = new();
 
         // Commands
         public RelayCommand OpenYamlFileCommand { get; }
@@ -51,6 +57,10 @@ namespace ParadoxTranslator.ViewModels
             AiEnabled = config.EnableAi;
             SourceLanguage = config.SourceLanguage;
             TargetLanguage = config.TargetLanguage;
+
+            // Init autosave timer (3s debounce)
+            _autosaveTimer.Interval = TimeSpan.FromSeconds(3);
+            _autosaveTimer.Tick += OnAutosaveTimerTick;
         }
         
         public string StatusMessage 
@@ -131,6 +141,35 @@ namespace ParadoxTranslator.ViewModels
         {
             // Clean up resources if needed
             GC.SuppressFinalize(this);
+            _autosaveTimer.Stop();
+        }
+
+        private async void OnAutosaveTimerTick(object? sender, EventArgs e)
+        {
+            _autosaveTimer.Stop();
+            if (_pendingAutosave)
+            {
+                _pendingAutosave = false;
+                await SaveAllAsync();
+            }
+        }
+
+        private void ScheduleAutosave()
+        {
+            _pendingAutosave = true;
+            _autosaveTimer.Stop();
+            _autosaveTimer.Start();
+        }
+
+        private void OnEntryPropertyChanged(object? sender, PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == nameof(LocalizationEntryViewModel.TranslatedText))
+            {
+                // Update counts on current file
+                SelectedFile?.RecalculateCounts();
+                // Debounced save
+                ScheduleAutosave();
+            }
         }
 
         /// <summary>
@@ -201,6 +240,14 @@ namespace ParadoxTranslator.ViewModels
                         }
 
                         var entryViewModels = entries.Select(e => new LocalizationEntryViewModel(e)).ToList();
+                        // Hook change tracking for autosave
+                        foreach (var vmEntry in entryViewModels)
+                        {
+                            if (_watchedEntries.Add(vmEntry))
+                            {
+                                vmEntry.PropertyChanged += OnEntryPropertyChanged;
+                            }
+                        }
 
                         var fileViewModel = new FileViewModel
                         {
@@ -313,6 +360,14 @@ namespace ParadoxTranslator.ViewModels
 
                         var entries = await ParadoxParser.ParseFileAsync(filePath);
                         var entryViewModels = entries.Select(e => new LocalizationEntryViewModel(e)).ToList();
+                        // Hook change tracking for autosave
+                        foreach (var vmEntry in entryViewModels)
+                        {
+                            if (_watchedEntries.Add(vmEntry))
+                            {
+                                vmEntry.PropertyChanged += OnEntryPropertyChanged;
+                            }
+                        }
 
                         var fileViewModel = new FileViewModel
                         {
