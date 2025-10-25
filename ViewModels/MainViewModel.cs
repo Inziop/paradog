@@ -11,6 +11,7 @@ using System.IO;
 using MessageBox = System.Windows.MessageBox;
 using System.Text;
 using System.Text.Json;
+using System.Threading.Tasks;
 
 namespace ParadoxTranslator.ViewModels
 {
@@ -130,6 +131,150 @@ namespace ParadoxTranslator.ViewModels
         {
             // Clean up resources if needed
             GC.SuppressFinalize(this);
+        }
+
+        /// <summary>
+        /// Explicitly save current session snapshot to disk.
+        /// Safe to call frequently; errors are swallowed by the service.
+        /// </summary>
+        public Task SaveAllAsync()
+        {
+            try
+            {
+                var snapshot = BuildSessionSnapshot();
+                Services.SessionService.Save(snapshot);
+            }
+            catch
+            {
+                // ignore
+            }
+            return Task.CompletedTask;
+        }
+
+        /// <summary>
+        /// Restore previously opened files and basic preferences from a session state.
+        /// Missing files are skipped gracefully.
+        /// </summary>
+        public async Task RestoreSessionAsync(SessionState session)
+        {
+            if (session == null) return;
+
+            try
+            {
+                // Restore preferences first
+                AiEnabled = session.AiEnabled;
+                SourceLanguage = string.IsNullOrWhiteSpace(session.SourceLanguage) ? SourceLanguage : session.SourceLanguage;
+                TargetLanguage = string.IsNullOrWhiteSpace(session.TargetLanguage) ? TargetLanguage : session.TargetLanguage;
+
+                if (session.OpenedFiles == null || session.OpenedFiles.Count == 0)
+                {
+                    return;
+                }
+
+                StatusMessage = "Restoring last session...";
+
+                Files.Clear();
+                var existing = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                FileViewModel? toSelect = null;
+
+                foreach (var filePath in session.OpenedFiles)
+                {
+                    try
+                    {
+                        if (string.IsNullOrWhiteSpace(filePath) || !File.Exists(filePath) || existing.Contains(filePath))
+                            continue;
+
+                        var entries = await ParadoxParser.ParseFileAsync(filePath);
+
+                        // Apply saved translations (by key) if available for this file
+                        Dictionary<string, string>? savedMap = null;
+                        if (session.Translations != null && session.Translations.TryGetValue(filePath, out var map) && map != null)
+                        {
+                            savedMap = map;
+                            foreach (var entry in entries)
+                            {
+                                if (!string.IsNullOrWhiteSpace(entry.Key) && savedMap.TryGetValue(entry.Key, out var t) && !string.IsNullOrWhiteSpace(t))
+                                {
+                                    entry.TranslatedText = t;
+                                }
+                            }
+                        }
+
+                        var entryViewModels = entries.Select(e => new LocalizationEntryViewModel(e)).ToList();
+
+                        var fileViewModel = new FileViewModel
+                        {
+                            FilePath = filePath,
+                            LastModified = FileService.GetFileModifiedTime(filePath),
+                            Entries = new ObservableCollection<LocalizationEntryViewModel>(entryViewModels)
+                        };
+
+                        Files.Add(fileViewModel);
+                        existing.Add(filePath);
+
+                        // Ensure counts reflect applied translations
+                        fileViewModel.RecalculateCounts();
+
+                        if (!string.IsNullOrWhiteSpace(session.SelectedFilePath) &&
+                            filePath.Equals(session.SelectedFilePath, StringComparison.OrdinalIgnoreCase))
+                        {
+                            toSelect = fileViewModel;
+                        }
+                    }
+                    catch
+                    {
+                        // Skip problematic files
+                    }
+                }
+
+                if (toSelect == null && Files.Count > 0)
+                {
+                    toSelect = Files[0];
+                }
+
+                SelectedFile = toSelect;
+                StatusMessage = Files.Count > 0 ? $"Restored {Files.Count} file(s) from last session" : "No files restored";
+            }
+            catch
+            {
+                // Non-fatal
+            }
+        }
+
+        /// <summary>
+        /// Build a serializable snapshot of the current session.
+        /// </summary>
+        public SessionState BuildSessionSnapshot()
+        {
+            var state = new SessionState
+            {
+                OpenedFiles = Files.Select(f => f.FilePath).Where(p => !string.IsNullOrWhiteSpace(p)).ToList(),
+                SelectedFilePath = SelectedFile?.FilePath,
+                SourceLanguage = SourceLanguage,
+                TargetLanguage = TargetLanguage,
+                AiEnabled = AiEnabled
+            };
+
+            // Capture translations per file (only non-empty translations)
+            foreach (var file in Files)
+            {
+                if (string.IsNullOrWhiteSpace(file.FilePath)) continue;
+                var map = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+                foreach (var vm in file.Entries)
+                {
+                    var key = vm.Entry.Key;
+                    var val = vm.Entry.TranslatedText;
+                    if (!string.IsNullOrWhiteSpace(key) && !string.IsNullOrWhiteSpace(val))
+                    {
+                        map[key] = val;
+                    }
+                }
+                if (map.Count > 0)
+                {
+                    state.Translations[file.FilePath] = map;
+                }
+            }
+            return state;
         }
 
         private void UpdateProgressText()
@@ -420,6 +565,8 @@ namespace ParadoxTranslator.ViewModels
                 {
                     entry.Entry.TranslatedText = result.TranslatedText;
                     entry.Status = $"Translated with {result.Engine}";
+                    // Persist progress
+                    await SaveAllAsync();
                 }
                 else
                 {
