@@ -3,6 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:controls="clr-namespace:ParadoxTranslator.Controls"
         mc:Ignorable="d"
         Title="Paradox Translator" Height="900" Width="1400"
         WindowStartupLocation="CenterScreen"
@@ -161,21 +162,36 @@
                     </Border>
 
                     <!-- File Actions -->
-                    <Button Content="� Open File" Command="{Binding OpenYamlFileCommand}"
+                    <Button Content="📂 Open File" Command="{Binding OpenYamlFileCommand}"
                             Background="#007ACC" Style="{StaticResource HeaderButtonStyle}"
-                            Margin="0,0,10,0" ToolTip="Open a YAML localization file"/>
+                            Margin="0,0,10,0" ToolTip="Open a YAML localization file (Ctrl+O)"/>
+                    
+                    <!-- Quick Filter -->
+                    <Border Background="#252526" CornerRadius="4" Padding="8,4" Margin="0,0,10,0">
+                        <DockPanel>
+                            <TextBlock Text="Filter:" Foreground="#CCCCCC" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                            <ComboBox Width="120" Style="{StaticResource HeaderComboBoxStyle}"
+                                     SelectedValuePath="Tag"
+                                     SelectedValue="{Binding FilterMode, Mode=TwoWay}">
+                                <ComboBoxItem Content="All" Tag="All" IsSelected="True"/>
+                                <ComboBoxItem Content="Translated" Tag="Translated"/>
+                                <ComboBoxItem Content="Untranslated" Tag="Untranslated"/>
+                                <ComboBoxItem Content="Has Issues" Tag="HasIssues"/>
+                            </ComboBox>
+                        </DockPanel>
+                    </Border>
 
                     <!-- Other Actions -->
                     <Button Content="⚙️ Settings" Command="{Binding OpenSettingsCommand}" 
                             Background="#007ACC" Style="{StaticResource HeaderButtonStyle}"
                             Margin="10,0,0,0"
-                            ToolTip="Configure translation settings"/>
+                            ToolTip="Configure translation settings (Ctrl+,)"/>
                     <Button Content="📊 Statistics" Command="{Binding ShowStatisticsCommand}" 
                             Margin="10,0,0,0" Background="#28A745" Style="{StaticResource HeaderButtonStyle}"
-                            ToolTip="View translation statistics"/>
+                            ToolTip="View translation statistics (F5)"/>
                     <Button Content="💾 Export" Command="{Binding ExportCommand}" 
                             Margin="10,0,0,0" Background="#8E44AD" Style="{StaticResource HeaderButtonStyle}"
-                            ToolTip="Export translations to file"/>
+                            ToolTip="Export translations to file (Ctrl+E)"/>
                     <Button Content="❓ Help" Command="{Binding ShowWelcomeCommand}" 
                             Margin="10,0,0,0" Background="#17A2B8" Style="{StaticResource HeaderButtonStyle}"
                             ToolTip="Show help and welcome screen"/>
@@ -199,19 +215,32 @@
                     <!-- Search Box -->
                     <Border DockPanel.Dock="Top" Background="#2D2D30" Padding="10" BorderThickness="0,0,0,1" BorderBrush="#3E3E42">
                         <Grid>
-                            <TextBox Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
-                                     Background="#3C3C3C" Foreground="White" Padding="8,4"
-                                     BorderThickness="0" TextChanged="OnSearchTextChanged">
-                                <TextBox.Resources>
-                                    <Style TargetType="{x:Type Border}">
-                                        <Setter Property="CornerRadius" Value="4"/>
-                                    </Style>
-                                </TextBox.Resources>
-                            </TextBox>
-                            <TextBlock Text="Search files..." Margin="8,4,0,0"
-                                       Foreground="#999999" IsHitTestVisible="False">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            
+                            <!-- Search Icon -->
+                            <TextBlock Grid.Column="0" Text="🔍" FontSize="14" 
+                                       Foreground="#999999" VerticalAlignment="Center"
+                                       Margin="8,0,0,0"/>
+                            
+                            <!-- Search TextBox -->
+                            <TextBox x:Name="SearchBox" Grid.Column="1"
+                                     Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                                     Background="Transparent" Foreground="White" 
+                                     Padding="8,4" BorderThickness="0" 
+                                     VerticalAlignment="Center"
+                                     TextChanged="OnSearchTextChanged"/>
+                            
+                            <!-- Placeholder Text -->
+                            <TextBlock Grid.Column="1" Text="Search files..." 
+                                       Margin="8,0,0,0" Padding="0,4"
+                                       Foreground="#666666" IsHitTestVisible="False"
+                                       VerticalAlignment="Center">
                                 <TextBlock.Style>
-                                    <Style TargetType="{x:Type TextBlock}">
+                                    <Style TargetType="TextBlock">
                                         <Setter Property="Visibility" Value="Collapsed"/>
                                         <Style.Triggers>
                                             <DataTrigger Binding="{Binding Text, ElementName=SearchBox}" Value="">
@@ -221,11 +250,32 @@
                                     </Style>
                                 </TextBlock.Style>
                             </TextBlock>
+                            
+                            <!-- Clear Button -->
+                            <Button x:Name="ClearSearchButton" Grid.Column="2" 
+                                    Content="×" FontSize="16"
+                                    Foreground="#999999" Background="Transparent"
+                                    BorderThickness="0" Padding="8,0"
+                                    Cursor="Hand" VerticalAlignment="Center"
+                                    Visibility="Collapsed"
+                                    Click="OnClearSearchClick">
+                                <Button.Style>
+                                    <Style TargetType="Button">
+                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                        <Style.Triggers>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter Property="Foreground" Value="White"/>
+                                            </Trigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Button.Style>
+                            </Button>
                         </Grid>
                     </Border>
 
                     <!-- File List -->
-                    <ListBox ItemsSource="{Binding Files}"
+                    <ListBox x:Name="FileListBox"
+                             ItemsSource="{Binding Files}"
                              SelectedItem="{Binding SelectedFile}"
                              Background="Transparent"
                              BorderThickness="0"
@@ -287,6 +337,37 @@
 
             <!-- Translation Grid -->
             <Border Grid.Column="1" Background="#252526" CornerRadius="4">
+                <DockPanel>
+                    <!-- Batch Action Toolbar -->
+                    <Border DockPanel.Dock="Top" Background="#2D2D30" Padding="10" BorderThickness="0,0,0,1" BorderBrush="#3E3E42">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="Batch Actions:" Foreground="#CCCCCC" VerticalAlignment="Center" Margin="0,0,10,0" FontWeight="SemiBold"/>
+                            <Button Content="✓ Select All" Command="{Binding SelectAllCommand}"
+                                    Background="#28A745" Foreground="White" BorderThickness="0" 
+                                    Padding="10,4" Margin="0,0,5,0" Cursor="Hand"
+                                    ToolTip="Select all visible entries"/>
+                            <Button Content="✗ Deselect All" Command="{Binding DeselectAllCommand}"
+                                    Background="#6C757D" Foreground="White" BorderThickness="0" 
+                                    Padding="10,4" Margin="0,0,10,0" Cursor="Hand"
+                                    ToolTip="Clear all selections"/>
+                            <Button Content="🤖 Translate Selected" Command="{Binding BatchTranslateCommand}"
+                                    Background="#8E44AD" Foreground="White" BorderThickness="0" 
+                                    Padding="10,4" FontWeight="SemiBold" Cursor="Hand"
+                                    ToolTip="Batch translate all selected untranslated entries">
+                                <Button.Style>
+                                    <Style TargetType="Button">
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding AiEnabled}" Value="False">
+                                                <Setter Property="IsEnabled" Value="False"/>
+                                                <Setter Property="Opacity" Value="0.5"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Button.Style>
+                            </Button>
+                        </StackPanel>
+                    </Border>
+                    
                 <DataGrid ItemsSource="{Binding SelectedFile.Entries}"
                           AutoGenerateColumns="False"
                           CanUserAddRows="False"
@@ -307,9 +388,19 @@
                         <Style TargetType="DataGridRow">
                             <Setter Property="Background" Value="Transparent"/>
                             <Style.Triggers>
+                                <!-- Translated rows: subtle green tint -->
+                                <DataTrigger Binding="{Binding IsTranslated}" Value="True">
+                                    <Setter Property="Background" Value="#1A2E1A"/>
+                                </DataTrigger>
+                                <!-- Has issues: warning yellow tint -->
+                                <DataTrigger Binding="{Binding HasPlaceholderIssues}" Value="True">
+                                    <Setter Property="Background" Value="#3A2A1A"/>
+                                </DataTrigger>
+                                <!-- Selected state overrides -->
                                 <Trigger Property="IsSelected" Value="True">
                                     <Setter Property="Background" Value="#007ACC"/>
                                 </Trigger>
+                                <!-- Hover state -->
                                 <Trigger Property="IsMouseOver" Value="True">
                                     <Setter Property="Background" Value="#3E3E42"/>
                                 </Trigger>
@@ -317,6 +408,9 @@
                         </Style>
                     </DataGrid.Resources>
                     <DataGrid.Columns>
+                        <DataGridCheckBoxColumn Header="☑" 
+                                              Binding="{Binding IsSelected, UpdateSourceTrigger=PropertyChanged}"
+                                              Width="40"/>
                         <DataGridTextColumn Header="Key" 
                                           Binding="{Binding Entry.Key}"
                                           Width="150"
@@ -337,18 +431,41 @@
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="*"/>
                                             <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="Auto"/>
                                         </Grid.ColumnDefinitions>
                                         <TextBox Text="{Binding Entry.TranslatedText, UpdateSourceTrigger=PropertyChanged}"
                                                 TextWrapping="Wrap"
                                                 AcceptsReturn="True"
                                                 Margin="4"/>
                                         <Button Grid.Column="1" 
+                                                Content="📋"
+                                                ToolTip="Copy source to translation (Ctrl+C)"
+                                                Command="{Binding DataContext.CopySourceToTranslationCommand, 
+                                                          RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                CommandParameter="{Binding}"
+                                                Margin="2,0"
+                                                Padding="4,2"
+                                                Background="#6C757D"
+                                                BorderThickness="0"
+                                                Foreground="White">
+                                            <Button.Style>
+                                                <Style TargetType="Button">
+                                                    <Setter Property="Cursor" Value="Hand"/>
+                                                    <Style.Triggers>
+                                                        <Trigger Property="IsMouseOver" Value="True">
+                                                            <Setter Property="Opacity" Value="0.8"/>
+                                                        </Trigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Button.Style>
+                                        </Button>
+                                        <Button Grid.Column="2" 
                                                 Content="🤖"
-                                                ToolTip="Translate with AI"
+                                                ToolTip="Translate with AI (Ctrl+T)"
                                                 Command="{Binding DataContext.TranslateWithAiCommand, 
                                                           RelativeSource={RelativeSource AncestorType=DataGrid}}"
                                                 CommandParameter="{Binding}"
-                                                Margin="4,0"
+                                                Margin="2,0,4,0"
                                                 Padding="4,2"
                                                 Background="#8E44AD"
                                                 BorderThickness="0"
@@ -372,10 +489,27 @@
                         </DataGridTemplateColumn>
                         <DataGridTextColumn Header="Status" 
                                           Binding="{Binding Status}"
-                                          Width="100"
+                                          Width="150"
                                           IsReadOnly="True"/>
                     </DataGrid.Columns>
+                    <!-- Context Menu -->
+                    <DataGrid.ContextMenu>
+                        <ContextMenu>
+                            <MenuItem Header="Copy Key" Click="OnCopyKey"/>
+                            <MenuItem Header="Copy Source Text" Click="OnCopySource"/>
+                            <MenuItem Header="Copy Translation" Click="OnCopyTranslation"/>
+                            <Separator/>
+                            <MenuItem Header="Clear Translation" Click="OnClearTranslation"/>
+                            <MenuItem Header="Copy Source to Translation" 
+                                     Command="{Binding PlacementTarget.DataContext.CopySourceToTranslationCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                     CommandParameter="{Binding PlacementTarget.SelectedItem, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
+                            <MenuItem Header="Translate with AI" 
+                                     Command="{Binding PlacementTarget.DataContext.TranslateWithAiCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                     CommandParameter="{Binding PlacementTarget.SelectedItem, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
+                        </ContextMenu>
+                    </DataGrid.ContextMenu>
                 </DataGrid>
+                </DockPanel>
             </Border>
         </Grid>
 
@@ -392,5 +526,14 @@
                            DockPanel.Dock="Right"/>
             </DockPanel>
         </Border>
+        
+        <!-- Toast Container (Top-Right) -->
+        <Grid Grid.RowSpan="3" IsHitTestVisible="False">
+            <StackPanel x:Name="ToastContainer" 
+                       HorizontalAlignment="Right" 
+                       VerticalAlignment="Top"
+                       Margin="20,20,20,0">
+            </StackPanel>
+        </Grid>
     </Grid>
 </Window>

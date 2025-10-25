@@ -26,11 +26,28 @@ namespace ParadoxTranslator.ViewModels
         private string _targetLanguage = "vi";
         private System.Windows.Media.Brush _aiStatusBrush = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(220, 53, 69)); // Red color for OFF
         public ObservableCollection<FileViewModel> Files { get; } = new();
+        private string _searchText = "";
+
+        public string SearchText
+        {
+            get => _searchText;
+            set
+            {
+                if (_searchText != value)
+                {
+                    _searchText = value;
+                    OnPropertyChanged(nameof(SearchText));
+                }
+            }
+        }
 
         // Autosave (debounced) state
         private readonly DispatcherTimer _autosaveTimer = new DispatcherTimer();
         private bool _pendingAutosave;
         private readonly HashSet<LocalizationEntryViewModel> _watchedEntries = new();
+
+        // Toast notification callback
+        public Action<string, string, int>? ShowToastCallback { get; set; }
 
         // Commands
         public RelayCommand OpenYamlFileCommand { get; }
@@ -41,6 +58,10 @@ namespace ParadoxTranslator.ViewModels
         public RelayCommand ShowWelcomeCommand { get; }
         public RelayCommand ShowAboutCommand { get; }
         public RelayCommand<LocalizationEntryViewModel> TranslateWithAiCommand { get; }
+        public RelayCommand<LocalizationEntryViewModel> CopySourceToTranslationCommand { get; }
+        public RelayCommand BatchTranslateCommand { get; }
+        public RelayCommand SelectAllCommand { get; }
+        public RelayCommand DeselectAllCommand { get; }
 
         public MainViewModel()
         {
@@ -51,6 +72,10 @@ namespace ParadoxTranslator.ViewModels
             ShowWelcomeCommand = new RelayCommand(ShowWelcome);
             ShowAboutCommand = new RelayCommand(ShowAbout);
             TranslateWithAiCommand = new RelayCommand<LocalizationEntryViewModel>(TranslateWithAi);
+            CopySourceToTranslationCommand = new RelayCommand<LocalizationEntryViewModel>(CopySourceToTranslation);
+            BatchTranslateCommand = new RelayCommand(BatchTranslate);
+            SelectAllCommand = new RelayCommand(SelectAll);
+            DeselectAllCommand = new RelayCommand(DeselectAll);
 
             // Load settings
             var config = Services.SettingsService.LoadConfig();
@@ -151,6 +176,8 @@ namespace ParadoxTranslator.ViewModels
             {
                 _pendingAutosave = false;
                 await SaveAllAsync();
+                // Don't show toast for autosave - it's too noisy
+                // User can see "Last saved" in status bar instead
             }
         }
 
@@ -489,6 +516,7 @@ namespace ParadoxTranslator.ViewModels
                 }
 
                 StatusMessage = $"Exported {exportedCount} file(s) to {exportDir}";
+                ShowToastCallback?.Invoke("Export Complete", $"Exported {exportedCount} file(s) successfully", 0); // 0 = Success
                 MessageBox.Show(StatusMessage, "Export", MessageBoxButton.OK, MessageBoxImage.Information);
             }
             catch (Exception ex)
@@ -601,6 +629,55 @@ namespace ParadoxTranslator.ViewModels
             }
         }
 
+        // Filter property for quick filtering
+        private string _filterMode = "All";
+        public string FilterMode
+        {
+            get => _filterMode;
+            set
+            {
+                if (_filterMode != value)
+                {
+                    _filterMode = value;
+                    OnPropertyChanged(nameof(FilterMode));
+                    ApplyFilter();
+                }
+            }
+        }
+
+        private void ApplyFilter()
+        {
+            if (SelectedFile == null) return;
+            
+            // Store original entries if not already stored
+            if (!_originalEntries.ContainsKey(SelectedFile.FilePath))
+            {
+                _originalEntries[SelectedFile.FilePath] = SelectedFile.Entries.ToList();
+            }
+
+            var original = _originalEntries[SelectedFile.FilePath];
+            IEnumerable<LocalizationEntryViewModel> filtered = original;
+
+            switch (_filterMode)
+            {
+                case "Translated":
+                    filtered = original.Where(e => e.IsTranslated);
+                    break;
+                case "Untranslated":
+                    filtered = original.Where(e => !e.IsTranslated);
+                    break;
+                case "HasIssues":
+                    filtered = original.Where(e => e.HasPlaceholderIssues);
+                    break;
+                // "All" - no filter
+            }
+
+            SelectedFile.Entries = new ObservableCollection<LocalizationEntryViewModel>(filtered);
+            SelectedFile.RecalculateCounts();
+        }
+
+        private readonly Dictionary<string, List<LocalizationEntryViewModel>> _originalEntries = new();
+
         private async void TranslateWithAi(LocalizationEntryViewModel? entry)
         {
             if (entry == null || !AiEnabled) return;
@@ -635,6 +712,109 @@ namespace ParadoxTranslator.ViewModels
                 entry.Status = "Translation failed";
                 StatusMessage = $"Translation error: {ex.Message}";
                 MessageBox.Show($"Error during translation:\n{ex.Message}", "Translation Error",
+                               MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private void CopySourceToTranslation(LocalizationEntryViewModel? entry)
+        {
+            if (entry == null) return;
+            entry.Entry.TranslatedText = entry.Entry.SourceText;
+            entry.Status = "Copied from source";
+            StatusMessage = $"Copied source to translation for: {entry.Key}";
+        }
+
+        private void SelectAll(object? parameter)
+        {
+            if (SelectedFile?.Entries == null) return;
+            foreach (var entry in SelectedFile.Entries)
+            {
+                entry.IsSelected = true;
+            }
+            StatusMessage = $"Selected {SelectedFile.Entries.Count} entries";
+        }
+
+        private void DeselectAll(object? parameter)
+        {
+            if (SelectedFile?.Entries == null) return;
+            foreach (var entry in SelectedFile.Entries)
+            {
+                entry.IsSelected = false;
+            }
+            StatusMessage = "Deselected all entries";
+        }
+
+        private async void BatchTranslate(object? parameter)
+        {
+            if (SelectedFile?.Entries == null || !AiEnabled)
+            {
+                MessageBox.Show("Please ensure AI is enabled and a file is selected.", "Batch Translate",
+                               MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            var selected = SelectedFile.Entries.Where(e => e.IsSelected && !e.IsTranslated).ToList();
+            if (selected.Count == 0)
+            {
+                MessageBox.Show("No untranslated entries selected. Select entries using the checkbox column.",
+                               "Batch Translate", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+
+            var result = MessageBox.Show($"Translate {selected.Count} selected entries with AI?\n\nThis may take several minutes and consume API quota.",
+                                        "Batch Translate", MessageBoxButton.YesNo, MessageBoxImage.Question);
+            if (result != MessageBoxResult.Yes) return;
+
+            try
+            {
+                StatusMessage = $"Batch translating {selected.Count} entries...";
+                var config = Services.SettingsService.LoadConfig();
+                config.SourceLanguage = SourceLanguage;
+                config.TargetLanguage = TargetLanguage;
+                var translationService = new TranslationService(config);
+
+                int completed = 0, failed = 0;
+                foreach (var entry in selected)
+                {
+                    try
+                    {
+                        entry.Status = "Translating...";
+                        var translateResult = await translationService.TranslateTextAsync(entry.Entry.SourceText, SourceLanguage, TargetLanguage);
+                        if (translateResult.Success)
+                        {
+                            entry.Entry.TranslatedText = translateResult.TranslatedText;
+                            entry.Status = $"Translated with {translateResult.Engine}";
+                            completed++;
+                        }
+                        else
+                        {
+                            entry.Status = $"Failed: {translateResult.ErrorMessage}";
+                            failed++;
+                        }
+                        StatusMessage = $"Batch progress: {completed + failed}/{selected.Count} ({completed} success, {failed} failed)";
+                    }
+                    catch
+                    {
+                        entry.Status = "Translation error";
+                        failed++;
+                    }
+                }
+
+                await SaveAllAsync();
+                SelectedFile.RecalculateCounts();
+                StatusMessage = $"Batch translation completed: {completed} success, {failed} failed";
+                ShowToastCallback?.Invoke(
+                    failed > 0 ? "Batch Translation Complete (with errors)" : "Batch Translation Complete",
+                    $"{completed} translated, {failed} failed",
+                    failed > 0 ? 2 : 0 // 2 = Warning if failures, 0 = Success
+                );
+                MessageBox.Show($"Batch translation completed!\n\nSuccessful: {completed}\nFailed: {failed}",
+                               "Batch Translate", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                StatusMessage = $"Batch translation error: {ex.Message}";
+                MessageBox.Show($"Error during batch translation:\n{ex.Message}", "Error",
                                MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
