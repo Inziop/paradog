@@ -69,7 +69,7 @@
             
             <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center" Margin="15,0">
                 <TextBlock Text="📊" FontSize="18" Margin="0,0,8,0"/>
-                <TextBlock Text="Statistics" FontSize="14" FontWeight="SemiBold" 
+                <TextBlock x:Name="TitleText" Text="Statistics" FontSize="14" FontWeight="SemiBold" 
                            Foreground="White" VerticalAlignment="Center"/>
             </StackPanel>
             
@@ -83,7 +83,7 @@
         <!-- Header -->
         <Border Grid.Row="1" Background="#2D2D30" Padding="20,15">
             <StackPanel Orientation="Horizontal">
-                <TextBlock Text="View your translation progress and statistics" FontSize="14" 
+                <TextBlock x:Name="SubtitleText" Text="View your translation progress and statistics" FontSize="14" 
                            Foreground="#CCCCCC" VerticalAlignment="Center"/>
             </StackPanel>
         </Border>
@@ -92,7 +92,7 @@
         <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto" Padding="20">
             <StackPanel>
                 <!-- Overall Statistics -->
-                <GroupBox Header="Overall Progress" Margin="0,0,0,20" 
+                <GroupBox x:Name="OverallProgressGroup" Header="Overall Progress" Margin="0,0,0,20" 
                         Foreground="White" BorderBrush="#3C3C3C">
                     <StackPanel Margin="15">
                         <Grid>
@@ -103,21 +103,21 @@
                             </Grid.ColumnDefinitions>
                             
                             <StackPanel Grid.Column="0" HorizontalAlignment="Center">
-                                <TextBlock Text="Total Files" FontSize="14" FontWeight="Bold" 
+                                <TextBlock x:Name="TotalFilesLabel" Text="Total Files" FontSize="14" FontWeight="Bold" 
                                            Foreground="#007ACC" HorizontalAlignment="Center"/>
                                 <TextBlock x:Name="TotalFilesText" Text="0" FontSize="24" FontWeight="Bold" 
                                            Foreground="White" HorizontalAlignment="Center"/>
                             </StackPanel>
                             
                             <StackPanel Grid.Column="1" HorizontalAlignment="Center">
-                                <TextBlock Text="Total Entries" FontSize="14" FontWeight="Bold" 
+                                <TextBlock x:Name="TotalEntriesLabel" Text="Total Entries" FontSize="14" FontWeight="Bold" 
                                            Foreground="#28A745" HorizontalAlignment="Center"/>
                                 <TextBlock x:Name="TotalEntriesText" Text="0" FontSize="24" FontWeight="Bold" 
                                            Foreground="White" HorizontalAlignment="Center"/>
                             </StackPanel>
                             
                             <StackPanel Grid.Column="2" HorizontalAlignment="Center">
-                                <TextBlock Text="Translated" FontSize="14" FontWeight="Bold" 
+                                <TextBlock x:Name="TranslatedLabel" Text="Translated" FontSize="14" FontWeight="Bold" 
                                            Foreground="#FFC107" HorizontalAlignment="Center"/>
                                 <TextBlock x:Name="TranslatedText" Text="0" FontSize="24" FontWeight="Bold" 
                                            Foreground="White" HorizontalAlignment="Center"/>
@@ -125,6 +125,7 @@
                         </Grid>
                         
                         <ProgressBar x:Name="OverallProgressBar" Height="20" Margin="0,15,0,0" 
+                                     Style="{StaticResource AnimatedProgressBar}"
                                      Background="#1E1E1E" Foreground="#007ACC"/>
                         
                         <TextBlock x:Name="OverallProgressText" Text="0% Complete" 
@@ -134,7 +135,7 @@
                 </GroupBox>
                 
                 <!-- File Statistics -->
-                <GroupBox Header="File Statistics" Margin="0,0,0,20" 
+                <GroupBox x:Name="FileStatisticsGroup" Header="File Statistics" Margin="0,0,0,20" 
                           Foreground="White" BorderBrush="#3C3C3C">
                     <StackPanel Margin="15">
                         <DataGrid x:Name="FileStatisticsGrid" 
@@ -146,18 +147,36 @@
                                 <DataGridTextColumn Header="File Name" Binding="{Binding FileName}" 
                                                     Width="*" IsReadOnly="True"/>
                                 <DataGridTextColumn Header="Total" Binding="{Binding TotalEntries}" 
-                                                    Width="80" IsReadOnly="True"/>
+                                                    Width="80" IsReadOnly="True">
+                                    <DataGridTextColumn.ElementStyle>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="HorizontalAlignment" Value="Center"/>
+                                        </Style>
+                                    </DataGridTextColumn.ElementStyle>
+                                </DataGridTextColumn>
                                 <DataGridTextColumn Header="Translated" Binding="{Binding TranslatedEntries}" 
-                                                    Width="80" IsReadOnly="True"/>
+                                                    Width="80" IsReadOnly="True">
+                                    <DataGridTextColumn.ElementStyle>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="HorizontalAlignment" Value="Center"/>
+                                        </Style>
+                                    </DataGridTextColumn.ElementStyle>
+                                </DataGridTextColumn>
                                 <DataGridTextColumn Header="Progress" Binding="{Binding ProgressPercentage, StringFormat={}{0:F1}%}" 
-                                                    Width="80" IsReadOnly="True"/>
+                                                    Width="80" IsReadOnly="True">
+                                    <DataGridTextColumn.ElementStyle>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="HorizontalAlignment" Value="Center"/>
+                                        </Style>
+                                    </DataGridTextColumn.ElementStyle>
+                                </DataGridTextColumn>
                             </DataGrid.Columns>
                         </DataGrid>
                     </StackPanel>
                 </GroupBox>
                 
                 <!-- Translation Quality -->
-                <GroupBox Header="Translation Quality" Margin="0,0,0,20" 
+                <GroupBox x:Name="TranslationQualityGroup" Header="Translation Quality" Margin="0,0,0,20" 
                           Foreground="White" BorderBrush="#3C3C3C">
                     <StackPanel Margin="15">
                         <Grid>
@@ -167,14 +186,14 @@
                             </Grid.ColumnDefinitions>
                             
                             <StackPanel Grid.Column="0">
-                                <TextBlock Text="Successful Translations" FontWeight="Bold" 
+                                <TextBlock x:Name="SuccessfulLabel" Text="Successful Translations" FontWeight="Bold" 
                                            Foreground="#28A745" Margin="0,0,0,5"/>
                                 <TextBlock x:Name="SuccessfulText" Text="0" FontSize="18" 
                                            Foreground="White"/>
                             </StackPanel>
                             
                             <StackPanel Grid.Column="1">
-                                <TextBlock Text="Failed Translations" FontWeight="Bold" 
+                                <TextBlock x:Name="FailedLabel" Text="Failed Translations" FontWeight="Bold" 
                                            Foreground="#DC3545" Margin="0,0,0,5"/>
                                 <TextBlock x:Name="FailedText" Text="0" FontSize="18" 
                                            Foreground="White"/>
@@ -184,7 +203,7 @@
                 </GroupBox>
                 
                 <!-- Time Statistics -->
-                <GroupBox Header="Time Statistics" Margin="0,0,0,20" 
+                <GroupBox x:Name="TimeStatisticsGroup" Header="Time Statistics" Margin="0,0,0,20" 
                           Foreground="White" BorderBrush="#3C3C3C">
                     <StackPanel Margin="15">
                         <Grid>
@@ -195,19 +214,19 @@
                             </Grid.ColumnDefinitions>
                             
                             <StackPanel Grid.Column="0" HorizontalAlignment="Center">
-                                <TextBlock Text="Start Time" FontSize="12" Foreground="#CCCCCC"/>
+                                <TextBlock x:Name="StartTimeLabel" Text="Start Time" FontSize="12" Foreground="#CCCCCC"/>
                                 <TextBlock x:Name="StartTimeText" Text="--:--:--" FontSize="14" 
                                            Foreground="White" HorizontalAlignment="Center"/>
                             </StackPanel>
                             
                             <StackPanel Grid.Column="1" HorizontalAlignment="Center">
-                                <TextBlock Text="Elapsed Time" FontSize="12" Foreground="#CCCCCC"/>
+                                <TextBlock x:Name="ElapsedTimeLabel" Text="Elapsed Time" FontSize="12" Foreground="#CCCCCC"/>
                                 <TextBlock x:Name="ElapsedTimeText" Text="00:00:00" FontSize="14" 
                                            Foreground="White" HorizontalAlignment="Center"/>
                             </StackPanel>
                             
                             <StackPanel Grid.Column="2" HorizontalAlignment="Center">
-                                <TextBlock Text="Avg. Time/Entry" FontSize="12" Foreground="#CCCCCC"/>
+                                <TextBlock x:Name="AvgTimeLabel" Text="Avg. Time/Entry" FontSize="12" Foreground="#CCCCCC"/>
                                 <TextBlock x:Name="AvgTimeText" Text="0.0s" FontSize="14" 
                                            Foreground="White" HorizontalAlignment="Center"/>
                             </StackPanel>
@@ -220,10 +239,10 @@
         <!-- Footer -->
         <Border Grid.Row="3" Background="#252526" Padding="20" BorderBrush="#3E3E42" BorderThickness="0,1,0,0">
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                <Button Content="Export Report" Margin="0,0,10,0" 
+                <Button x:Name="ExportButton" Content="Export Report" Margin="0,0,10,0" 
                         Background="#007ACC" Foreground="White" 
                         BorderThickness="0" Padding="15,8" Cursor="Hand"/>
-                <Button Content="Close" 
+                <Button x:Name="CloseButton" Content="Close" Click="OnWindowClose"
                         Background="#666666" Foreground="White" 
                         BorderThickness="0" Padding="15,8" Cursor="Hand"/>
             </StackPanel>

@@ -19,6 +19,22 @@ public partial class SettingsWindow : Window, IDisposable
     {
         InitializeComponent();
         LoadSettings();
+        UpdateLocalization();
+        
+        // Subscribe to language changes
+        Services.LocalizationService.Instance.PropertyChanged += (s, e) => UpdateLocalization();
+    }
+
+    private void UpdateLocalization()
+    {
+        var loc = Services.LocalizationService.Instance;
+        
+        // Update UI texts
+        SettingsTitleText.Text = loc["Settings"];
+        SettingsDescriptionText.Text = loc["SettingsTitle"];
+        ResetButton.Content = loc["ResetDefaults"];
+        CancelButton.Content = loc["Cancel"];
+        SaveButton.Content = loc["SaveSettings"];
     }
 
     private void OnTestGoogleClick(object sender, RoutedEventArgs e)
@@ -101,6 +117,14 @@ Would you like to open the Google Cloud Console?";
         MaxConcurrentTextBox.Text = cfg.MaxConcurrentRequests.ToString();
 
         // UI settings
+        for (int i = 0; i < LanguageComboBox.Items.Count; i++)
+        {
+            if (LanguageComboBox.Items[i] is ComboBoxItem item && (item.Tag?.ToString() ?? "") == cfg.AppLanguage)
+            {
+                LanguageComboBox.SelectedIndex = i;
+                break;
+            }
+        }
         ThemeComboBox.SelectedIndex = cfg.Theme == "Light" ? 1 : 0;
         ShowProgressAnimationsCheckBox.IsChecked = cfg.ShowProgressAnimations;
         AutoSaveCheckBox.IsChecked = cfg.AutoSave;
@@ -137,6 +161,9 @@ Would you like to open the Google Cloud Console?";
         cfg.ShowProgressAnimations = ShowProgressAnimationsCheckBox.IsChecked == true;
         cfg.AutoSave = AutoSaveCheckBox.IsChecked == true;
 
+        // Language setting
+        cfg.AppLanguage = (LanguageComboBox.SelectedItem as ComboBoxItem)?.Tag?.ToString() ?? cfg.AppLanguage;
+
         cfg.Quality = (QualityComboBox.SelectedItem as ComboBoxItem)?.Tag?.ToString() ?? cfg.Quality;
         cfg.EnableLogging = EnableLoggingCheckBox.IsChecked == true;
         cfg.ShowDebugInfo = ShowDebugInfoCheckBox.IsChecked == true;
@@ -160,6 +187,11 @@ Would you like to open the Google Cloud Console?";
     private void OnSaveClick(object sender, RoutedEventArgs e)
     {
         SaveSettings();
+        
+        // Apply language change immediately
+        var config = Services.SettingsService.LoadConfig();
+        Services.LocalizationService.Instance.SaveLanguage(config.AppLanguage);
+        
         DialogResult = true;
         Close();
     }

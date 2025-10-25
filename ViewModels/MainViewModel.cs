@@ -25,7 +25,7 @@ namespace ParadoxTranslator.ViewModels
         private string _sourceLanguage = "en";
         private string _targetLanguage = "vi";
         private System.Windows.Media.Brush _aiStatusBrush = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(220, 53, 69)); // Red color for OFF
-        public ObservableCollection<FileViewModel> Files { get; } = new();
+        public RangeObservableCollection<FileViewModel> Files { get; } = new();
         private string _searchText = "";
 
         public string SearchText
@@ -164,9 +164,16 @@ namespace ParadoxTranslator.ViewModels
 
         public void Dispose()
         {
-            // Clean up resources if needed
-            GC.SuppressFinalize(this);
+            // Unsubscribe from all watched entries to prevent memory leaks
+            foreach (var entry in _watchedEntries)
+            {
+                entry.PropertyChanged -= OnEntryPropertyChanged;
+            }
+            _watchedEntries.Clear();
+
+            // Clean up timer
             _autosaveTimer.Stop();
+            GC.SuppressFinalize(this);
         }
 
         private async void OnAutosaveTimerTick(object? sender, EventArgs e)
@@ -183,6 +190,10 @@ namespace ParadoxTranslator.ViewModels
 
         private void ScheduleAutosave()
         {
+            // Check if autosave is enabled in settings
+            var config = Services.SettingsService.LoadConfig();
+            if (!config.AutoSave) return;
+
             _pendingAutosave = true;
             _autosaveTimer.Stop();
             _autosaveTimer.Start();
@@ -376,6 +387,7 @@ namespace ParadoxTranslator.ViewModels
                     var existing = new HashSet<string>(Files.Select(f => f.FilePath), StringComparer.OrdinalIgnoreCase);
                     int added = 0, skipped = 0;
                     FileViewModel? lastAdded = null;
+                    var newFiles = new List<FileViewModel>();
 
                     foreach (var filePath in dialog.FileNames)
                     {
@@ -403,10 +415,16 @@ namespace ParadoxTranslator.ViewModels
                             Entries = new ObservableCollection<LocalizationEntryViewModel>(entryViewModels)
                         };
 
-                        Files.Add(fileViewModel);
+                        newFiles.Add(fileViewModel);
                         existing.Add(filePath);
                         added++;
                         lastAdded = fileViewModel;
+                    }
+
+                    // Add all new files at once with single UI update
+                    if (newFiles.Count > 0)
+                    {
+                        Files.AddRange(newFiles);
                     }
 
                     if (lastAdded != null)
@@ -545,6 +563,12 @@ namespace ParadoxTranslator.ViewModels
                     WindowStartupLocation = WindowStartupLocation.CenterOwner
                 };
                 settingsWindow.ShowDialog();
+                
+                // Refresh debug badge after settings window closes
+                if (Application.Current.MainWindow is MainWindow mainWindow)
+                {
+                    mainWindow.UpdateDebugInfo();
+                }
             }
             catch (Exception ex)
             {
@@ -558,7 +582,7 @@ namespace ParadoxTranslator.ViewModels
         {
             try
             {
-                var statisticsWindow = new StatisticsWindow
+                var statisticsWindow = new StatisticsWindow(this)
                 {
                     Owner = Application.Current.MainWindow,
                     WindowStartupLocation = WindowStartupLocation.CenterOwner

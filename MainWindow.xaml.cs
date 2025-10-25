@@ -34,10 +34,85 @@ namespace ParadoxTranslator
             ProjectNameTextBlock.Text = project.Name;
 
             Loaded += OnLoadedAsync;
+            StateChanged += OnStateChanged;
             Closing += OnClosing;
             
             // Register keyboard shortcuts
             RegisterKeyboardShortcuts();
+            
+            // Update debug info visibility
+            UpdateDebugInfo();
+            
+            // Subscribe to localization changes
+            Services.LocalizationService.Instance.PropertyChanged += (s, e) => UpdateLocalization();
+            UpdateLocalization();
+        }
+
+        private void UpdateLocalization()
+        {
+            var loc = Services.LocalizationService.Instance;
+            
+            // Toolbar buttons
+            OpenFileButton.Content = $"📂 {loc["OpenFile"]}";
+            SettingsButton.Content = $"⚙️ {loc["Settings"]}";
+            StatisticsButton.Content = $"📊 {loc["Statistics"]}";
+            ExportButton.Content = $"💾 {loc["MenuExport"]}";
+            HelpButton.Content = $"❓ {loc["MenuHelp"]}";
+            AboutButton.Content = $"ℹ️ {loc["MenuAbout"]}";
+            
+            // Language labels
+            FromLabel.Text = loc["FromLanguage"];
+            ToLabel.Text = loc["ToLanguage"];
+            
+            // AI checkbox
+            EnableAICheckBox.Content = loc["EnableAICheckbox"];
+            
+            // Batch action buttons
+            SelectAllButton.Content = loc["SelectAll"];
+            DeselectAllButton.Content = loc["DeselectAll"];
+            TranslateSelectedButton.Content = $"🤖 {loc["TranslateSelected"]}";
+            
+            // Switch project button
+            SwitchProjectButton.Content = $"⇄ {loc["SwitchProject"]}";
+        }
+
+        public void UpdateDebugInfo()
+        {
+            var config = Services.SettingsService.LoadConfig();
+            if (config.ShowDebugInfo)
+            {
+                DebugInfoBorder.Visibility = Visibility.Visible;
+                var vm = DataContext as MainViewModel;
+                var fileCount = vm?.Files.Count ?? 0;
+                var entryCount = vm?.Files.Sum(f => f.Entries.Count) ?? 0;
+                DebugInfoText.Text = $"F:{fileCount} E:{entryCount}";
+            }
+            else
+            {
+                DebugInfoBorder.Visibility = Visibility.Collapsed;
+            }
+        }
+
+        private void OnStateChanged(object? sender, EventArgs e)
+        {
+            if (WindowState == WindowState.Maximized)
+            {
+                // Adjust window to fit within working area (excluding taskbar)
+                var workArea = SystemParameters.WorkArea;
+                MaxHeight = workArea.Height;
+                MaxWidth = workArea.Width;
+                
+                // Remove all margins to make window reach screen edges completely
+                BorderThickness = new Thickness(0);
+                Margin = new Thickness(0);
+            }
+            else
+            {
+                MaxHeight = double.PositiveInfinity;
+                MaxWidth = double.PositiveInfinity;
+                BorderThickness = new Thickness(0);
+                Margin = new Thickness(0);
+            }
         }
 
         private void OnMinimize(object sender, RoutedEventArgs e)
@@ -176,13 +251,12 @@ namespace ParadoxTranslator
 
         private async void OnSwitchProject(object sender, RoutedEventArgs e)
         {
-            var result = MessageBox.Show(
-                "Do you want to switch to another project? Any unsaved changes will be saved.",
+            var dialog = new ConfirmDialog(
                 "Switch Project",
-                MessageBoxButton.YesNo,
-                MessageBoxImage.Question);
-
-            if (result == MessageBoxResult.Yes)
+                "Do you want to switch to another project?\nAny unsaved changes will be saved automatically.");
+            dialog.Owner = this;
+            
+            if (dialog.ShowDialog() == true)
             {
                 // Save current work
                 if (DataContext is MainViewModel vm)

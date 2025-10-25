@@ -12,6 +12,9 @@ public partial class App : Application
     {
         base.OnStartup(e);
         
+        // Initialize localization service
+        Services.LocalizationService.Instance.LoadLanguage();
+        
         // Set up global exception handling
         DispatcherUnhandledException += App_DispatcherUnhandledException;
 

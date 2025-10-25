@@ -25,7 +25,7 @@ public class AiTranslator : ITranslator
     {
         var engine = (config.SelectedEngine ?? string.Empty).ToLowerInvariant();
 
-
+        LoggingService.Debug($"TranslateAsync called: engine={engine}, sourceLang={sourceLang}, targetLang={targetLang}, textLength={text.Length}");
 
         // Fall back to no-op if AI disabled or engine not set
         if (!config.EnableAi) throw new InvalidOperationException("AI translation is disabled");
@@ -41,8 +41,9 @@ public class AiTranslator : ITranslator
             try
             {
                 using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-                if (config.TimeoutSeconds > 0)
-                    cts.CancelAfter(TimeSpan.FromSeconds(config.TimeoutSeconds));
+                // Use quality-based timeout
+                var timeout = config.GetQualityTimeout();
+                cts.CancelAfter(TimeSpan.FromSeconds(timeout));
 
                 switch (engine)
                 {
@@ -59,7 +60,7 @@ public class AiTranslator : ITranslator
                     case "openai-gemini":
                         if (string.IsNullOrWhiteSpace(config.GeminiApiKey))
                             throw new InvalidOperationException("Gemini API key is not configured");
-                        return await TranslateWithGeminiAsync(text, sourceLang, targetLang, config.GeminiApiKey, config.GeminiEndpoint, cts.Token);
+                        return await TranslateWithGeminiAsync(text, sourceLang, targetLang, config, cts.Token);
                     default:
                         throw new InvalidOperationException($"Unsupported translation engine: {engine}");
                 }
@@ -71,10 +72,12 @@ public class AiTranslator : ITranslator
             catch (Exception ex)
             {
                 Debug.WriteLine($"[AiTranslator] Translation attempt {attempts} failed. Error: {ex}");
+                LoggingService.Error($"Translation attempt {attempts} failed for engine '{engine}'", ex);
 
                 if (attempts >= maxAttempts)
                 {
                     Debug.WriteLine($"[AiTranslator] Max attempts reached. Giving up and returning original text.");
+                    LoggingService.Error($"Translation failed after {maxAttempts} attempts");
                     throw new Exception("AI translation failed after multiple attempts. Please check your configuration and network.", ex);
                 }
 
@@ -123,8 +126,11 @@ public class AiTranslator : ITranslator
         throw new JsonException("Failed to parse translated text from Google Translate API response.");
     }
 
-    private async Task<string> TranslateWithGeminiAsync(string text, string sourceLang, string targetLang, string apiKey, string endpoint, CancellationToken cancellationToken)
+    private async Task<string> TranslateWithGeminiAsync(string text, string sourceLang, string targetLang, TranslationConfig config, CancellationToken cancellationToken)
     {
+        var apiKey = config.GeminiApiKey;
+        var endpoint = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent";
+
         // Enhanced prompt for more natural and accurate translations
         var rules = targetLang.ToLower() == "vi"
             ? $@"Bạn là chuyên gia dịch thuật game và phần mềm. Hãy dịch đoạn văn sau từ {sourceLang} sang {targetLang}.

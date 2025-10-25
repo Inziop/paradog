@@ -77,10 +77,10 @@ public class ParadoxParser
     /// <summary>
     /// Parse a localization file from file path
     /// </summary>
-    public static async Task<IEnumerable<LocalizationEntry>> ParseFileAsync(string filePath)
+    public static Task<IEnumerable<LocalizationEntry>> ParseFileAsync(string filePath)
     {
         using var reader = new StreamReader(filePath, Encoding.UTF8, detectEncodingFromByteOrderMarks: true);
-        return Parse(reader);
+        return Task.FromResult(Parse(reader));
     }
 
     /// <summary>

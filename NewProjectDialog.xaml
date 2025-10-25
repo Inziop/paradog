@@ -108,13 +108,36 @@
             <ComboBox x:Name="GameTypeComboBox" 
                       Style="{StaticResource ModernComboBox}"
                       Padding="10,8" 
-                      FontSize="13" Margin="0,0,0,15">
-                <ComboBoxItem Content="Hearts of Iron IV" Tag="HoI4"/>
-                <ComboBoxItem Content="Stellaris" Tag="Stellaris"/>
-                <ComboBoxItem Content="Crusader Kings III" Tag="CK3"/>
-                <ComboBoxItem Content="Europa Universalis IV" Tag="EU4"/>
-                <ComboBoxItem Content="Victoria 3" Tag="Victoria3"/>
-                <ComboBoxItem Content="Other" Tag="Other" IsSelected="True"/>
+                      FontSize="13" Margin="0,0,0,15"
+                      Background="#FFFFFF" Foreground="#000000"
+                      TextElement.Foreground="#000000">
+                <ComboBox.Resources>
+                    <Style TargetType="TextBlock">
+                        <Setter Property="Foreground" Value="#000000"/>
+                    </Style>
+                    <Style TargetType="ComboBoxItem">
+                        <Setter Property="Foreground" Value="#000000"/>
+                        <Setter Property="Background" Value="#FFFFFF"/>
+                    </Style>
+                </ComboBox.Resources>
+                <ComboBoxItem Tag="HoI4">
+                    <TextBlock Text="Hearts of Iron IV" Foreground="Black"/>
+                </ComboBoxItem>
+                <ComboBoxItem Tag="Stellaris">
+                    <TextBlock Text="Stellaris" Foreground="Black"/>
+                </ComboBoxItem>
+                <ComboBoxItem Tag="CK3">
+                    <TextBlock Text="Crusader Kings III" Foreground="Black"/>
+                </ComboBoxItem>
+                <ComboBoxItem Tag="EU4">
+                    <TextBlock Text="Europa Universalis IV" Foreground="Black"/>
+                </ComboBoxItem>
+                <ComboBoxItem Tag="Victoria3">
+                    <TextBlock Text="Victoria 3" Foreground="Black"/>
+                </ComboBoxItem>
+                <ComboBoxItem Tag="Other" IsSelected="True">
+                    <TextBlock Text="Other" Foreground="Black"/>
+                </ComboBoxItem>
             </ComboBox>
 
             <!-- Description -->
@@ -147,11 +170,30 @@
                     <ComboBox x:Name="SourceLanguageComboBox" 
                               Style="{StaticResource ModernComboBox}"
                               Padding="10,8" 
-                              FontSize="13">
-                        <ComboBoxItem Content="English" Tag="en" IsSelected="True"/>
-                        <ComboBoxItem Content="French" Tag="fr"/>
-                        <ComboBoxItem Content="German" Tag="de"/>
-                        <ComboBoxItem Content="Spanish" Tag="es"/>
+                              FontSize="13"
+                              Background="#FFFFFF" Foreground="#000000"
+                              TextElement.Foreground="#000000">
+                        <ComboBox.Resources>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="Foreground" Value="#000000"/>
+                            </Style>
+                            <Style TargetType="ComboBoxItem">
+                                <Setter Property="Foreground" Value="#000000"/>
+                                <Setter Property="Background" Value="#FFFFFF"/>
+                            </Style>
+                        </ComboBox.Resources>
+                        <ComboBoxItem Tag="en" IsSelected="True">
+                            <TextBlock Text="English" Foreground="Black"/>
+                        </ComboBoxItem>
+                        <ComboBoxItem Tag="fr">
+                            <TextBlock Text="French" Foreground="Black"/>
+                        </ComboBoxItem>
+                        <ComboBoxItem Tag="de">
+                            <TextBlock Text="German" Foreground="Black"/>
+                        </ComboBoxItem>
+                        <ComboBoxItem Tag="es">
+                            <TextBlock Text="Spanish" Foreground="Black"/>
+                        </ComboBoxItem>
                     </ComboBox>
                 </StackPanel>
 
@@ -161,11 +203,30 @@
                     <ComboBox x:Name="TargetLanguageComboBox" 
                               Style="{StaticResource ModernComboBox}"
                               Padding="10,8" 
-                              FontSize="13">
-                        <ComboBoxItem Content="Vietnamese" Tag="vi" IsSelected="True"/>
-                        <ComboBoxItem Content="Chinese" Tag="zh"/>
-                        <ComboBoxItem Content="Japanese" Tag="ja"/>
-                        <ComboBoxItem Content="Korean" Tag="ko"/>
+                              FontSize="13"
+                              Background="#FFFFFF" Foreground="#000000"
+                              TextElement.Foreground="#000000">
+                        <ComboBox.Resources>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="Foreground" Value="#000000"/>
+                            </Style>
+                            <Style TargetType="ComboBoxItem">
+                                <Setter Property="Foreground" Value="#000000"/>
+                                <Setter Property="Background" Value="#FFFFFF"/>
+                            </Style>
+                        </ComboBox.Resources>
+                        <ComboBoxItem Tag="vi" IsSelected="True">
+                            <TextBlock Text="Vietnamese" Foreground="Black"/>
+                        </ComboBoxItem>
+                        <ComboBoxItem Tag="zh">
+                            <TextBlock Text="Chinese" Foreground="Black"/>
+                        </ComboBoxItem>
+                        <ComboBoxItem Tag="ja">
+                            <TextBlock Text="Japanese" Foreground="Black"/>
+                        </ComboBoxItem>
+                        <ComboBoxItem Tag="ko">
+                            <TextBlock Text="Korean" Foreground="Black"/>
+                        </ComboBoxItem>
                     </ComboBox>
                 </StackPanel>
             </Grid>

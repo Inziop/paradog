@@ -4,10 +4,11 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:controls="clr-namespace:ParadoxTranslator.Controls"
+        xmlns:utils="clr-namespace:ParadoxTranslator.Utils"
         mc:Ignorable="d"
         Title="Paradox Translator" Height="900" Width="1400"
         WindowStartupLocation="CenterScreen"
-        MinHeight="600" MinWidth="1000"
+        MinHeight="700" MinWidth="1200"
         Background="#1E1E1E"
         WindowStyle="None"
         AllowsTransparency="True"
@@ -21,12 +22,8 @@
     </WindowChrome.WindowChrome>
     
     <Window.Resources>
-        <!-- Merge Shared Styles -->
+        <!-- SharedStyles already merged in App.xaml, no need to merge again -->
         <ResourceDictionary>
-            <ResourceDictionary.MergedDictionaries>
-                <ResourceDictionary Source="Styles/SharedStyles.xaml"/>
-            </ResourceDictionary.MergedDictionaries>
-
         <!-- Window Button Style -->
         <Style x:Key="WindowButtonStyle" TargetType="Button">
             <Setter Property="Background" Value="Transparent"/>
@@ -159,7 +156,7 @@
                     <!-- Language selectors -->
                     <Border Background="#252526" CornerRadius="4" Padding="8,4" Margin="0,0,10,0">
                         <DockPanel>
-                            <TextBlock Text="From:" Foreground="#CCCCCC" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                            <TextBlock x:Name="FromLabel" Text="From:" Foreground="#CCCCCC" VerticalAlignment="Center" Margin="0,0,8,0"/>
                             <ComboBox MinWidth="100" 
                                      Background="#FFFFFF" Foreground="#000000"
                                      TextElement.Foreground="#000000"
@@ -205,7 +202,7 @@
 
                     <Border Background="#252526" CornerRadius="4" Padding="8,4" Margin="0,0,10,0">
                         <DockPanel>
-                            <TextBlock Text="To:" Foreground="#CCCCCC" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                            <TextBlock x:Name="ToLabel" Text="To:" Foreground="#CCCCCC" VerticalAlignment="Center" Margin="0,0,8,0"/>
                             <ComboBox MinWidth="100" 
                                      Background="#FFFFFF" Foreground="#000000"
                                      TextElement.Foreground="#000000"
@@ -255,20 +252,20 @@
                             <Border Background="{Binding AiStatusBrush}" CornerRadius="4" Padding="6,4" VerticalAlignment="Center">
                                 <TextBlock Text="{Binding AiStatusText}" Foreground="White" FontWeight="SemiBold"/>
                             </Border>
-                            <CheckBox Content="Enable AI" IsChecked="{Binding AiEnabled, Mode=TwoWay}" 
+                            <CheckBox x:Name="EnableAICheckBox" Content="Enable AI" IsChecked="{Binding AiEnabled, Mode=TwoWay}" 
                                     Style="{StaticResource AICheckBoxStyle}"/>
                         </StackPanel>
                     </Border>
 
                     <!-- File Actions -->
-                    <Button Content="📂 Open File" Command="{Binding OpenYamlFileCommand}"
+                    <Button x:Name="OpenFileButton" Content="📂 Open File" Command="{Binding OpenYamlFileCommand}"
                             Background="#007ACC" Style="{StaticResource HeaderButtonStyle}"
                             Margin="0,0,10,0" ToolTip="Open a YAML localization file (Ctrl+O)"/>
                     
                     <!-- Quick Filter -->
                     <Border Background="#252526" CornerRadius="4" Padding="8,4" Margin="0,0,10,0">
                         <DockPanel>
-                            <TextBlock Text="Filter:" Foreground="#CCCCCC" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                            <TextBlock x:Name="FilterLabel" Text="Filter:" Foreground="#CCCCCC" VerticalAlignment="Center" Margin="0,0,8,0"/>
                             <ComboBox MinWidth="90" 
                                      Background="#FFFFFF" Foreground="#000000"
                                      TextElement.Foreground="#000000"
@@ -301,20 +298,20 @@
                     </Border>
 
                     <!-- Other Actions -->
-                    <Button Content="⚙️ Settings" Command="{Binding OpenSettingsCommand}" 
+                    <Button x:Name="SettingsButton" Content="⚙️ Settings" Command="{Binding OpenSettingsCommand}" 
                             Background="#007ACC" Style="{StaticResource HeaderButtonStyle}"
                             Margin="10,0,0,0"
                             ToolTip="Configure translation settings (Ctrl+,)"/>
-                    <Button Content="📊 Statistics" Command="{Binding ShowStatisticsCommand}" 
+                    <Button x:Name="StatisticsButton" Content="📊 Statistics" Command="{Binding ShowStatisticsCommand}" 
                             Margin="10,0,0,0" Background="#28A745" Style="{StaticResource HeaderButtonStyle}"
                             ToolTip="View translation statistics (F5)"/>
-                    <Button Content="💾 Export" Command="{Binding ExportCommand}" 
+                    <Button x:Name="ExportButton" Content="💾 Export" Command="{Binding ExportCommand}" 
                             Margin="10,0,0,0" Background="#8E44AD" Style="{StaticResource HeaderButtonStyle}"
                             ToolTip="Export translations to file (Ctrl+E)"/>
-                    <Button Content="❓ Help" Command="{Binding ShowWelcomeCommand}" 
+                    <Button x:Name="HelpButton" Content="❓ Help" Command="{Binding ShowWelcomeCommand}" 
                             Margin="10,0,0,0" Background="#17A2B8" Style="{StaticResource HeaderButtonStyle}"
                             ToolTip="Show help and welcome screen"/>
-                    <Button Content="ℹ️ About" Command="{Binding ShowAboutCommand}" 
+                    <Button x:Name="AboutButton" Content="ℹ️ About" Command="{Binding ShowAboutCommand}" 
                             Margin="10,0,0,0" Background="#6C757D" Style="{StaticResource HeaderButtonStyle}"
                             ToolTip="About this application"/>
                     </StackPanel>
@@ -324,72 +321,79 @@
             <!-- Main Content -->
             <Grid Grid.Row="2" Margin="0">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="280"/>
-                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="300" MinWidth="200" MaxWidth="500"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*" MinWidth="400"/>
             </Grid.ColumnDefinitions>
 
-            <!-- File List -->
-            <Border Grid.Column="0" Background="#252526" CornerRadius="0" Margin="0">
+            <!-- File List Sidebar -->
+            <Border Grid.Column="0" Background="#252526" BorderBrush="#3E3E42" BorderThickness="0,0,1,0">
                 <DockPanel>
+                    <!-- Sidebar Header -->
+                    <Border DockPanel.Dock="Top" Background="#2D2D30" Padding="12,10" BorderThickness="0,0,0,1" BorderBrush="#3E3E42">
+                        <TextBlock Text="FILES" FontSize="11" FontWeight="SemiBold" 
+                                   Foreground="#CCCCCC" VerticalAlignment="Center"/>
+                    </Border>
+                    
                     <!-- Search Box -->
-                    <Border DockPanel.Dock="Top" Background="#2D2D30" Padding="10" BorderThickness="0,0,0,1" BorderBrush="#3E3E42">
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto"/>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
-                            
-                            <!-- Search Icon -->
-                            <TextBlock Grid.Column="0" Text="🔍" FontSize="14" 
-                                       Foreground="#999999" VerticalAlignment="Center"
-                                       Margin="8,0,0,0"/>
-                            
-                            <!-- Search TextBox -->
-                            <TextBox x:Name="SearchBox" Grid.Column="1"
-                                     Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
-                                     Background="Transparent" Foreground="White" 
-                                     Padding="8,4" BorderThickness="0" 
-                                     VerticalAlignment="Center"
-                                     TextChanged="OnSearchTextChanged"/>
-                            
-                            <!-- Placeholder Text -->
-                            <TextBlock Grid.Column="1" Text="Search files..." 
-                                       Margin="8,0,0,0" Padding="0,4"
-                                       Foreground="#666666" IsHitTestVisible="False"
-                                       VerticalAlignment="Center">
-                                <TextBlock.Style>
-                                    <Style TargetType="TextBlock">
-                                        <Setter Property="Visibility" Value="Collapsed"/>
-                                        <Style.Triggers>
-                                            <DataTrigger Binding="{Binding Text, ElementName=SearchBox}" Value="">
-                                                <Setter Property="Visibility" Value="Visible"/>
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </TextBlock.Style>
-                            </TextBlock>
-                            
-                            <!-- Clear Button -->
-                            <Button x:Name="ClearSearchButton" Grid.Column="2" 
-                                    Content="×" FontSize="16"
-                                    Foreground="#999999" Background="Transparent"
-                                    BorderThickness="0" Padding="8,0"
-                                    Cursor="Hand" VerticalAlignment="Center"
-                                    Visibility="Collapsed"
-                                    Click="OnClearSearchClick">
-                                <Button.Style>
-                                    <Style TargetType="Button">
-                                        <Setter Property="Visibility" Value="Collapsed"/>
-                                        <Style.Triggers>
-                                            <Trigger Property="IsMouseOver" Value="True">
-                                                <Setter Property="Foreground" Value="White"/>
-                                            </Trigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </Button.Style>
-                            </Button>
-                        </Grid>
+                    <Border DockPanel.Dock="Top" Background="#2D2D30" Padding="8,10" BorderThickness="0,0,0,1" BorderBrush="#3E3E42">
+                        <Border Background="#3C3C3C" BorderBrush="#3E3E42" BorderThickness="1" CornerRadius="3">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                
+                                <TextBlock Grid.Column="0" Text="🔍" FontSize="12" 
+                                           Foreground="#858585" VerticalAlignment="Center"
+                                           Margin="8,0,4,0"/>
+                                
+                                <TextBox x:Name="SearchBox" Grid.Column="1"
+                                         Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                                         Background="Transparent" Foreground="#CCCCCC" 
+                                         Padding="4,6" BorderThickness="0" 
+                                         FontSize="13"
+                                         VerticalAlignment="Center"
+                                         TextChanged="OnSearchTextChanged"/>
+                                
+                                <TextBlock Grid.Column="1" Text="Search files..." 
+                                           Margin="4,0,0,0" Padding="4,6"
+                                           FontSize="13"
+                                           Foreground="#6A6A6A" IsHitTestVisible="False"
+                                           VerticalAlignment="Center">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding Text, ElementName=SearchBox}" Value="">
+                                                    <Setter Property="Visibility" Value="Visible"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                                
+                                <Button x:Name="ClearSearchButton" Grid.Column="2" 
+                                        Content="×" FontSize="18"
+                                        Foreground="#858585" Background="Transparent"
+                                        BorderThickness="0" Padding="8,0"
+                                        Cursor="Hand" VerticalAlignment="Center"
+                                        Visibility="Collapsed"
+                                        Click="OnClearSearchClick">
+                                    <Button.Style>
+                                        <Style TargetType="Button">
+                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                            <Style.Triggers>
+                                                <Trigger Property="IsMouseOver" Value="True">
+                                                    <Setter Property="Foreground" Value="#CCCCCC"/>
+                                                </Trigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Button.Style>
+                                </Button>
+                            </Grid>
+                        </Border>
                     </Border>
 
                     <!-- File List -->
@@ -398,10 +402,13 @@
                              SelectedItem="{Binding SelectedFile}"
                              Background="Transparent"
                              BorderThickness="0"
-                             Margin="0,10,0,0">
+                             Padding="0"
+                             ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                             VirtualizingPanel.IsVirtualizing="True"
+                             VirtualizingPanel.VirtualizationMode="Recycling">
                         <ListBox.ItemTemplate>
                             <DataTemplate>
-                                <Grid Margin="5">
+                                <Grid Margin="0" Background="Transparent">
                                     <Grid.RowDefinitions>
                                         <RowDefinition Height="Auto"/>
                                         <RowDefinition Height="Auto"/>
@@ -409,13 +416,15 @@
                                     
                                     <TextBlock Grid.Row="0" 
                                               Text="{Binding FileName}" 
-                                              Foreground="White" 
-                                              FontWeight="SemiBold"
-                                              TextTrimming="CharacterEllipsis"/>
+                                              Foreground="#CCCCCC" 
+                                              FontWeight="Normal"
+                                              FontSize="13"
+                                              TextTrimming="CharacterEllipsis"
+                                              Margin="0,0,0,2"/>
                                     
                                     <TextBlock Grid.Row="1" 
                                               Text="{Binding RelativePath}" 
-                                              Foreground="#CCCCCC" 
+                                              Foreground="#858585" 
                                               FontSize="11"
                                               TextTrimming="CharacterEllipsis"/>
                                 </Grid>
@@ -424,16 +433,17 @@
                         <ListBox.ItemContainerStyle>
                             <Style TargetType="ListBoxItem">
                                 <Setter Property="Background" Value="Transparent"/>
-                                <Setter Property="Padding" Value="8,6"/>
-                                <Setter Property="Margin" Value="0,2"/>
+                                <Setter Property="Padding" Value="12,8"/>
+                                <Setter Property="Margin" Value="0"/>
                                 <Setter Property="BorderThickness" Value="0"/>
+                                <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
                                 <Setter Property="Template">
                                     <Setter.Value>
                                         <ControlTemplate TargetType="ListBoxItem">
                                             <Border Background="{TemplateBinding Background}"
                                                     BorderBrush="{TemplateBinding BorderBrush}"
                                                     BorderThickness="{TemplateBinding BorderThickness}"
-                                                    CornerRadius="4">
+                                                    Padding="{TemplateBinding Padding}">
                                                 <ContentPresenter/>
                                             </Border>
                                         </ControlTemplate>
@@ -441,50 +451,141 @@
                                 </Setter>
                                 <Style.Triggers>
                                     <Trigger Property="IsSelected" Value="True">
-                                        <Setter Property="Background" Value="#007ACC"/>
-                                        <Setter Property="BorderBrush" Value="#1C97EA"/>
+                                        <Setter Property="Background" Value="#094771"/>
                                     </Trigger>
-                                    <Trigger Property="IsMouseOver" Value="True">
-                                        <Setter Property="Background" Value="#3E3E42"/>
-                                    </Trigger>
+                                    <MultiTrigger>
+                                        <MultiTrigger.Conditions>
+                                            <Condition Property="IsMouseOver" Value="True"/>
+                                            <Condition Property="IsSelected" Value="False"/>
+                                        </MultiTrigger.Conditions>
+                                        <Setter Property="Background" Value="#2A2D2E"/>
+                                    </MultiTrigger>
                                 </Style.Triggers>
                             </Style>
                         </ListBox.ItemContainerStyle>
                     </ListBox>
                 </DockPanel>
             </Border>
+            
+            <!-- Resize Gripper -->
+            <GridSplitter Grid.Column="1" 
+                          Width="1" 
+                          Background="#3E3E42" 
+                          HorizontalAlignment="Stretch"
+                          VerticalAlignment="Stretch"
+                          ShowsPreview="False"
+                          Cursor="SizeWE"/>
 
             <!-- Translation Grid -->
-            <Border Grid.Column="1" Background="#252526" CornerRadius="0">
+            <Border Grid.Column="2" Background="#1E1E1E">
                 <DockPanel>
                     <!-- Batch Action Toolbar -->
-                    <Border DockPanel.Dock="Top" Background="#2D2D30" Padding="10" BorderThickness="0,0,0,1" BorderBrush="#3E3E42">
-                        <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="Batch Actions:" Foreground="#CCCCCC" VerticalAlignment="Center" Margin="0,0,10,0" FontWeight="SemiBold"/>
-                            <Button Content="✓ Select All" Command="{Binding SelectAllCommand}"
-                                    Background="#28A745" Foreground="White" BorderThickness="0" 
-                                    Padding="10,4" Margin="0,0,5,0" Cursor="Hand"
-                                    ToolTip="Select all visible entries"/>
-                            <Button Content="✗ Deselect All" Command="{Binding DeselectAllCommand}"
-                                    Background="#6C757D" Foreground="White" BorderThickness="0" 
-                                    Padding="10,4" Margin="0,0,10,0" Cursor="Hand"
-                                    ToolTip="Clear all selections"/>
-                            <Button Content="🤖 Translate Selected" Command="{Binding BatchTranslateCommand}"
-                                    Background="#8E44AD" Foreground="White" BorderThickness="0" 
-                                    Padding="10,4" FontWeight="SemiBold" Cursor="Hand"
-                                    ToolTip="Batch translate all selected untranslated entries">
-                                <Button.Style>
-                                    <Style TargetType="Button">
-                                        <Style.Triggers>
-                                            <DataTrigger Binding="{Binding AiEnabled}" Value="False">
-                                                <Setter Property="IsEnabled" Value="False"/>
-                                                <Setter Property="Opacity" Value="0.5"/>
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </Button.Style>
-                            </Button>
-                        </StackPanel>
+                    <Border DockPanel.Dock="Top" Background="#2D2D30" Padding="16,10" BorderThickness="0,0,0,1" BorderBrush="#3E3E42">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            
+                            <TextBlock Grid.Column="0" Text="BATCH ACTIONS" 
+                                       Foreground="#858585" VerticalAlignment="Center" 
+                                       FontSize="11" FontWeight="SemiBold"/>
+                            
+                            <StackPanel Grid.Column="2" Orientation="Horizontal">
+                                <Button x:Name="SelectAllButton" Content="Select All" Command="{Binding SelectAllCommand}"
+                                        Background="#0E639C" Foreground="White" BorderThickness="0" 
+                                        Padding="10,5" Margin="0,0,6,0" Cursor="Hand" FontSize="12"
+                                        ToolTip="Select all visible entries">
+                                    <Button.Style>
+                                        <Style TargetType="Button">
+                                            <Setter Property="Template">
+                                                <Setter.Value>
+                                                    <ControlTemplate TargetType="Button">
+                                                        <Border Background="{TemplateBinding Background}"
+                                                                BorderThickness="0"
+                                                                CornerRadius="2"
+                                                                Padding="{TemplateBinding Padding}">
+                                                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                        </Border>
+                                                    </ControlTemplate>
+                                                </Setter.Value>
+                                            </Setter>
+                                            <Style.Triggers>
+                                                <Trigger Property="IsMouseOver" Value="True">
+                                                    <Setter Property="Background" Value="#1177BB"/>
+                                                </Trigger>
+                                                <Trigger Property="IsPressed" Value="True">
+                                                    <Setter Property="Background" Value="#0D5A8C"/>
+                                                </Trigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Button.Style>
+                                </Button>
+                                <Button x:Name="DeselectAllButton" Content="Deselect All" Command="{Binding DeselectAllCommand}"
+                                        Background="#3C3C3C" Foreground="White" BorderThickness="0" 
+                                        Padding="10,5" Margin="0,0,10,0" Cursor="Hand" FontSize="12"
+                                        ToolTip="Clear all selections">
+                                    <Button.Style>
+                                        <Style TargetType="Button">
+                                            <Setter Property="Template">
+                                                <Setter.Value>
+                                                    <ControlTemplate TargetType="Button">
+                                                        <Border Background="{TemplateBinding Background}"
+                                                                BorderThickness="0"
+                                                                CornerRadius="2"
+                                                                Padding="{TemplateBinding Padding}">
+                                                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                        </Border>
+                                                    </ControlTemplate>
+                                                </Setter.Value>
+                                            </Setter>
+                                            <Style.Triggers>
+                                                <Trigger Property="IsMouseOver" Value="True">
+                                                    <Setter Property="Background" Value="#505050"/>
+                                                </Trigger>
+                                                <Trigger Property="IsPressed" Value="True">
+                                                    <Setter Property="Background" Value="#2D2D30"/>
+                                                </Trigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Button.Style>
+                                </Button>
+                                <Button x:Name="TranslateSelectedButton" Content="🤖 Translate Selected" Command="{Binding BatchTranslateCommand}"
+                                        Background="#0E639C" Foreground="White" BorderThickness="0" 
+                                        Padding="12,5" FontWeight="SemiBold" Cursor="Hand" FontSize="12"
+                                        ToolTip="Batch translate all selected untranslated entries">
+                                    <Button.Style>
+                                        <Style TargetType="Button">
+                                            <Setter Property="Template">
+                                                <Setter.Value>
+                                                    <ControlTemplate TargetType="Button">
+                                                        <Border Background="{TemplateBinding Background}"
+                                                                BorderThickness="0"
+                                                                CornerRadius="2"
+                                                                Padding="{TemplateBinding Padding}">
+                                                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                        </Border>
+                                                    </ControlTemplate>
+                                                </Setter.Value>
+                                            </Setter>
+                                            <Style.Triggers>
+                                                <Trigger Property="IsMouseOver" Value="True">
+                                                    <Setter Property="Background" Value="#1177BB"/>
+                                                </Trigger>
+                                                <Trigger Property="IsPressed" Value="True">
+                                                    <Setter Property="Background" Value="#0D5A8C"/>
+                                                </Trigger>
+                                                <DataTrigger Binding="{Binding AiEnabled}" Value="False">
+                                                    <Setter Property="IsEnabled" Value="False"/>
+                                                    <Setter Property="Opacity" Value="0.4"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Button.Style>
+                                </Button>
+                            </StackPanel>
+                        </Grid>
                     </Border>
                     
                 <DataGrid ItemsSource="{Binding SelectedFile.Entries}"
@@ -492,120 +593,226 @@
                           CanUserAddRows="False"
                           CanUserDeleteRows="False"
                           HeadersVisibility="Column"
-                          GridLinesVisibility="Horizontal"
+                          GridLinesVisibility="Vertical"
                           Background="Transparent"
                           BorderThickness="0"
+                          FontSize="13"
                           ScrollViewer.VerticalScrollBarVisibility="Auto"
                           ScrollViewer.HorizontalScrollBarVisibility="Auto"
-                          RowHeaderWidth="0">
+                          ScrollViewer.CanContentScroll="True"
+                          VirtualizingPanel.IsVirtualizing="True"
+                          VirtualizingPanel.VirtualizationMode="Recycling"
+                          RowHeaderWidth="0"
+                          AlternationCount="10000"
+                          VerticalGridLinesBrush="#3E3E42"
+                          HorizontalGridLinesBrush="Transparent">
                     <DataGrid.Resources>
-                        <!-- ScrollBar style is in SharedStyles.xaml -->
                         <Style TargetType="DataGridRow">
-                            <Setter Property="Background" Value="Transparent"/>
+                            <Setter Property="Background" Value="#1E1E1E"/>
+                            <Setter Property="MinHeight" Value="40"/>
+                            <Setter Property="BorderThickness" Value="0,0,0,1"/>
+                            <Setter Property="BorderBrush" Value="#2D2D30"/>
                             <Style.Triggers>
-                                <!-- Translated rows: subtle green tint -->
                                 <DataTrigger Binding="{Binding IsTranslated}" Value="True">
-                                    <Setter Property="Background" Value="#1A2E1A"/>
+                                    <Setter Property="Background" Value="#0E3A0E"/>
                                 </DataTrigger>
-                                <!-- Has issues: warning yellow tint -->
                                 <DataTrigger Binding="{Binding HasPlaceholderIssues}" Value="True">
-                                    <Setter Property="Background" Value="#3A2A1A"/>
+                                    <Setter Property="Background" Value="#3A2416"/>
                                 </DataTrigger>
-                                <!-- Selected state overrides -->
                                 <Trigger Property="IsSelected" Value="True">
-                                    <Setter Property="Background" Value="#007ACC"/>
+                                    <Setter Property="Background" Value="#094771"/>
+                                    <Setter Property="BorderBrush" Value="#007ACC"/>
                                 </Trigger>
-                                <!-- Hover state -->
-                                <Trigger Property="IsMouseOver" Value="True">
-                                    <Setter Property="Background" Value="#3E3E42"/>
+                                <MultiTrigger>
+                                    <MultiTrigger.Conditions>
+                                        <Condition Property="IsMouseOver" Value="True"/>
+                                        <Condition Property="IsSelected" Value="False"/>
+                                    </MultiTrigger.Conditions>
+                                    <Setter Property="Background" Value="#2A2D2E"/>
+                                </MultiTrigger>
+                            </Style.Triggers>
+                        </Style>
+                        <Style TargetType="DataGridColumnHeader">
+                            <Setter Property="Background" Value="#252526"/>
+                            <Setter Property="Foreground" Value="#858585"/>
+                            <Setter Property="FontWeight" Value="SemiBold"/>
+                            <Setter Property="FontSize" Value="11"/>
+                            <Setter Property="Padding" Value="12,10"/>
+                            <Setter Property="BorderBrush" Value="#3E3E42"/>
+                            <Setter Property="BorderThickness" Value="0,0,1,1"/>
+                            <Setter Property="HorizontalContentAlignment" Value="Left"/>
+                        </Style>
+                        <Style TargetType="DataGridCell">
+                            <Setter Property="Background" Value="Transparent"/>
+                            <Setter Property="BorderThickness" Value="0,0,1,0"/>
+                            <Setter Property="BorderBrush" Value="#3E3E42"/>
+                            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+                            <Setter Property="Padding" Value="12,10"/>
+                            <Setter Property="Template">
+                                <Setter.Value>
+                                    <ControlTemplate TargetType="DataGridCell">
+                                        <Border Background="{TemplateBinding Background}"
+                                                BorderBrush="{TemplateBinding BorderBrush}"
+                                                BorderThickness="{TemplateBinding BorderThickness}"
+                                                Padding="{TemplateBinding Padding}">
+                                            <ContentPresenter VerticalAlignment="Top"/>
+                                        </Border>
+                                    </ControlTemplate>
+                                </Setter.Value>
+                            </Setter>
+                            <Style.Triggers>
+                                <Trigger Property="IsSelected" Value="True">
+                                    <Setter Property="Background" Value="Transparent"/>
+                                    <Setter Property="Foreground" Value="White"/>
                                 </Trigger>
                             </Style.Triggers>
                         </Style>
                     </DataGrid.Resources>
                     <DataGrid.Columns>
                         <DataGridCheckBoxColumn Header="☑" 
-                                              Binding="{Binding IsSelected, UpdateSourceTrigger=PropertyChanged}"
-                                              Width="40"/>
-                        <DataGridTextColumn Header="Key" 
+                                              Binding="{Binding IsSelected, UpdateSourceTrigger=LostFocus}"
+                                              Width="45" MinWidth="45" MaxWidth="45"/>
+                        <DataGridTextColumn Header="#" 
+                                          Width="60" MinWidth="50" MaxWidth="80"
+                                          IsReadOnly="True">
+                            <DataGridTextColumn.Binding>
+                                <Binding Path="(ItemsControl.AlternationIndex)" RelativeSource="{RelativeSource AncestorType=DataGridRow}">
+                                    <Binding.Converter>
+                                        <utils:AlternationIndexConverter/>
+                                    </Binding.Converter>
+                                </Binding>
+                            </DataGridTextColumn.Binding>
+                            <DataGridTextColumn.ElementStyle>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Foreground" Value="#858585"/>
+                                    <Setter Property="Padding" Value="0"/>
+                                    <Setter Property="TextAlignment" Value="Center"/>
+                                    <Setter Property="FontWeight" Value="SemiBold"/>
+                                </Style>
+                            </DataGridTextColumn.ElementStyle>
+                        </DataGridTextColumn>
+                        <DataGridTextColumn Header="KEY" 
                                           Binding="{Binding Entry.Key}"
-                                          Width="150"
-                                          IsReadOnly="True"/>
-                        <DataGridTemplateColumn Header="Source Text" Width="*">
+                                          Width="Auto" MinWidth="100"
+                                          IsReadOnly="True">
+                            <DataGridTextColumn.ElementStyle>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Foreground" Value="#D4D4D4"/>
+                                    <Setter Property="Padding" Value="0"/>
+                                </Style>
+                            </DataGridTextColumn.ElementStyle>
+                        </DataGridTextColumn>
+                        <DataGridTemplateColumn Header="SOURCE TEXT" Width="2*" MinWidth="200">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
                                     <TextBlock Text="{Binding Entry.SourceText}" 
                                              TextWrapping="Wrap" 
-                                             Margin="4"/>
+                                             Foreground="#D4D4D4"
+                                             FontSize="13"
+                                             Padding="0"
+                                             VerticalAlignment="Top"
+                                             LineHeight="20"/>
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>
                         </DataGridTemplateColumn>
-                        <DataGridTemplateColumn Header="Translation" Width="*">
+                        <DataGridTemplateColumn Header="TRANSLATION" Width="3*" MinWidth="250">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
-                                    <Grid>
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="*"/>
-                                            <ColumnDefinition Width="Auto"/>
-                                            <ColumnDefinition Width="Auto"/>
-                                        </Grid.ColumnDefinitions>
-                                        <TextBox Text="{Binding Entry.TranslatedText, UpdateSourceTrigger=PropertyChanged}"
-                                                TextWrapping="Wrap"
-                                                AcceptsReturn="True"
-                                                Margin="4"/>
-                                        <Button Grid.Column="1" 
-                                                Content="📋"
-                                                ToolTip="Copy source to translation (Ctrl+C)"
+                                    <TextBox Text="{Binding Entry.TranslatedText, UpdateSourceTrigger=LostFocus}"
+                                            TextWrapping="Wrap"
+                                            AcceptsReturn="True"
+                                            Background="Transparent"
+                                            Foreground="#D4D4D4"
+                                            BorderThickness="0"
+                                            FontSize="13"
+                                            Padding="0"
+                                            MinLines="1"
+                                            MaxLines="10"
+                                            VerticalScrollBarVisibility="Auto"
+                                            VerticalAlignment="Top"/>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                        <DataGridTemplateColumn Header="ACTIONS" Width="80" MinWidth="80" MaxWidth="80">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                        <Button Content="📋"
+                                                ToolTip="Copy source"
                                                 Command="{Binding DataContext.CopySourceToTranslationCommand, 
                                                           RelativeSource={RelativeSource AncestorType=DataGrid}}"
                                                 CommandParameter="{Binding}"
+                                                Width="28" Height="24"
                                                 Margin="2,0"
-                                                Padding="4,2"
-                                                Background="#6C757D"
+                                                Background="#3C3C3C"
                                                 BorderThickness="0"
-                                                Foreground="White">
+                                                Foreground="White"
+                                                FontSize="11"
+                                                Cursor="Hand">
                                             <Button.Style>
                                                 <Style TargetType="Button">
-                                                    <Setter Property="Cursor" Value="Hand"/>
+                                                    <Setter Property="Template">
+                                                        <Setter.Value>
+                                                            <ControlTemplate TargetType="Button">
+                                                                <Border Background="{TemplateBinding Background}"
+                                                                        CornerRadius="2"
+                                                                        Padding="4,2">
+                                                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                                </Border>
+                                                            </ControlTemplate>
+                                                        </Setter.Value>
+                                                    </Setter>
                                                     <Style.Triggers>
                                                         <Trigger Property="IsMouseOver" Value="True">
-                                                            <Setter Property="Opacity" Value="0.8"/>
+                                                            <Setter Property="Background" Value="#505050"/>
                                                         </Trigger>
                                                     </Style.Triggers>
                                                 </Style>
                                             </Button.Style>
                                         </Button>
-                                        <Button Grid.Column="2" 
-                                                Content="🤖"
-                                                ToolTip="Translate with AI (Ctrl+T)"
+                                        <Button Content="🤖"
+                                                ToolTip="Translate with AI"
                                                 Command="{Binding DataContext.TranslateWithAiCommand, 
                                                           RelativeSource={RelativeSource AncestorType=DataGrid}}"
                                                 CommandParameter="{Binding}"
-                                                Margin="2,0,4,0"
-                                                Padding="4,2"
-                                                Background="#8E44AD"
+                                                Width="28" Height="24"
+                                                Margin="2,0"
+                                                Background="#0E639C"
                                                 BorderThickness="0"
-                                                Foreground="White">
+                                                Foreground="White"
+                                                FontSize="11"
+                                                Cursor="Hand">
                                             <Button.Style>
                                                 <Style TargetType="Button">
+                                                    <Setter Property="Template">
+                                                        <Setter.Value>
+                                                            <ControlTemplate TargetType="Button">
+                                                                <Border Background="{TemplateBinding Background}"
+                                                                        CornerRadius="2"
+                                                                        Padding="4,2">
+                                                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                                </Border>
+                                                            </ControlTemplate>
+                                                        </Setter.Value>
+                                                    </Setter>
                                                     <Style.Triggers>
+                                                        <Trigger Property="IsMouseOver" Value="True">
+                                                            <Setter Property="Background" Value="#1177BB"/>
+                                                        </Trigger>
                                                         <DataTrigger Binding="{Binding DataContext.AiEnabled, 
                                                                      RelativeSource={RelativeSource AncestorType=DataGrid}}" 
                                                                      Value="False">
                                                             <Setter Property="IsEnabled" Value="False"/>
-                                                            <Setter Property="Opacity" Value="0.5"/>
+                                                            <Setter Property="Opacity" Value="0.4"/>
                                                         </DataTrigger>
                                                     </Style.Triggers>
                                                 </Style>
                                             </Button.Style>
                                         </Button>
-                                    </Grid>
+                                    </StackPanel>
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>
                         </DataGridTemplateColumn>
-                        <DataGridTextColumn Header="Status" 
-                                          Binding="{Binding Status}"
-                                          Width="150"
-                                          IsReadOnly="True"/>
                     </DataGrid.Columns>
                     <!-- Context Menu -->
                     <DataGrid.ContextMenu>
@@ -629,19 +836,68 @@
         </Grid>
 
         <!-- Status Bar -->
-        <Border Grid.Row="3" Background="#007ACC" Height="28" CornerRadius="0">
-            <DockPanel LastChildFill="False" Margin="15,0">
-                <TextBlock Text="{Binding StatusMessage}" 
-                           Foreground="White" 
-                           FontSize="12"
-                           VerticalAlignment="Center"
-                           DockPanel.Dock="Left"/>
-                <TextBlock Text="{Binding ProgressText}" 
-                           Foreground="White" 
-                           FontSize="12"
-                           VerticalAlignment="Center"
-                           DockPanel.Dock="Right"/>
-            </DockPanel>
+        <Border Grid.Row="3" Background="#007ACC" Height="22" BorderThickness="0,1,0,0" BorderBrush="#0E639C">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                
+                <!-- Left Section -->
+                <StackPanel Grid.Column="0" Orientation="Horizontal" Margin="12,0,0,0">
+                    <Border Background="#0E639C" CornerRadius="2" Padding="6,2" Margin="0,0,8,0"
+                            VerticalAlignment="Center">
+                        <TextBlock Text="🎮" FontSize="11" Foreground="White"/>
+                    </Border>
+                    <TextBlock Text="{Binding StatusMessage}" 
+                               Foreground="White" 
+                               FontSize="12"
+                               FontWeight="Normal"
+                               VerticalAlignment="Center"/>
+                </StackPanel>
+                
+                <!-- Right Section -->
+                <StackPanel Grid.Column="2" Orientation="Horizontal" Margin="0,0,12,0">
+                    <!-- Debug Info (only visible when enabled) -->
+                    <Border x:Name="DebugInfoBorder" Background="#FFC107" CornerRadius="2" Padding="6,2" Margin="0,0,8,0"
+                            VerticalAlignment="Center"
+                            Visibility="Collapsed"
+                            ToolTip="Debug mode active">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="🐛" FontSize="10" Foreground="#1E1E1E" Margin="0,0,4,0"/>
+                            <TextBlock x:Name="DebugInfoText" Text="DEBUG" 
+                                       Foreground="#1E1E1E" 
+                                       FontSize="11"
+                                       FontWeight="SemiBold"/>
+                        </StackPanel>
+                    </Border>
+                    
+                    <!-- File Count -->
+                    <Border Background="#0E639C" CornerRadius="2" Padding="6,2" Margin="0,0,8,0"
+                            VerticalAlignment="Center"
+                            ToolTip="Files loaded">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="📁" FontSize="10" Foreground="White" Margin="0,0,4,0"/>
+                            <TextBlock Text="{Binding Files.Count}" 
+                                       Foreground="White" 
+                                       FontSize="11"
+                                       FontWeight="SemiBold"/>
+                        </StackPanel>
+                    </Border>
+                    
+                    <!-- Progress -->
+                    <Border Background="#0E639C" CornerRadius="2" Padding="6,2" 
+                            VerticalAlignment="Center"
+                            ToolTip="Translation progress">
+                        <TextBlock Text="{Binding ProgressText}" 
+                                   Foreground="White" 
+                                   FontSize="11"
+                                   FontWeight="SemiBold"/>
+                    </Border>
+                </StackPanel>
+            </Grid>
         </Border>
         
         <!-- Toast Container (Top-Right) -->
