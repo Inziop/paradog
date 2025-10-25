@@ -9,6 +9,8 @@ using ParadoxTranslator.Services;
 using ParadoxTranslator.Utils;
 using System.IO;
 using MessageBox = System.Windows.MessageBox;
+using System.Text;
+using System.Text.Json;
 
 namespace ParadoxTranslator.ViewModels
 {
@@ -141,31 +143,52 @@ namespace ParadoxTranslator.ViewModels
             {
                 Title = "Select YAML File",
                 Filter = "YAML files (*.yml;*.yaml)|*.yml;*.yaml|All files (*.*)|*.*",
-                FilterIndex = 1
+                FilterIndex = 1,
+                Multiselect = true
             };
 
             if (dialog.ShowDialog() == true)
             {
                 try
                 {
-                    StatusMessage = "Loading file...";
-                    Files.Clear();
+                    StatusMessage = "Loading file(s)...";
 
-                    var filePath = dialog.FileName;
-                    var entries = await ParadoxParser.ParseFileAsync(filePath);
-                    var entryViewModels = entries.Select(e => new LocalizationEntryViewModel(e)).ToList();
-                    
-                    var fileViewModel = new FileViewModel
+                    // Keep existing files and append newly selected ones; avoid duplicates
+                    var existing = new HashSet<string>(Files.Select(f => f.FilePath), StringComparer.OrdinalIgnoreCase);
+                    int added = 0, skipped = 0;
+                    FileViewModel? lastAdded = null;
+
+                    foreach (var filePath in dialog.FileNames)
                     {
-                        FilePath = filePath,
-                        LastModified = FileService.GetFileModifiedTime(filePath),
-                        Entries = new ObservableCollection<LocalizationEntryViewModel>(entryViewModels)
-                    };
-                    
-                    Files.Add(fileViewModel);
-                    SelectedFile = fileViewModel;
+                        if (existing.Contains(filePath))
+                        {
+                            skipped++;
+                            continue;
+                        }
 
-                    StatusMessage = "File loaded successfully";
+                        var entries = await ParadoxParser.ParseFileAsync(filePath);
+                        var entryViewModels = entries.Select(e => new LocalizationEntryViewModel(e)).ToList();
+
+                        var fileViewModel = new FileViewModel
+                        {
+                            FilePath = filePath,
+                            LastModified = FileService.GetFileModifiedTime(filePath),
+                            Entries = new ObservableCollection<LocalizationEntryViewModel>(entryViewModels)
+                        };
+
+                        Files.Add(fileViewModel);
+                        existing.Add(filePath);
+                        added++;
+                        lastAdded = fileViewModel;
+                    }
+
+                    if (lastAdded != null)
+                        SelectedFile = lastAdded;
+
+                    if (added == 0)
+                        StatusMessage = skipped > 0 ? $"No new files added. Skipped {skipped} already-open file(s)." : "No files were selected.";
+                    else
+                        StatusMessage = skipped > 0 ? $"Added {added} file(s), skipped {skipped} duplicate(s)." : $"Added {added} file(s).";
                     UpdateProgressText();
                 }
                 catch (Exception ex)
@@ -179,7 +202,7 @@ namespace ParadoxTranslator.ViewModels
 
 
 
-        private void Export(object? parameter)
+        private async void Export(object? parameter)
         {
             if (Files.Count == 0)
             {
@@ -189,12 +212,84 @@ namespace ParadoxTranslator.ViewModels
 
             try
             {
-                foreach (var file in Files)
+                // Ask for export options (format & scope)
+                var optionsWin = new ExportOptionsWindow { Owner = Application.Current.MainWindow };
+                var confirm = optionsWin.ShowDialog();
+                if (confirm != true)
                 {
-                    // TODO: Implement export logic
-                    StatusMessage = $"Exporting {Path.GetFileName(file.FilePath)}...";
+                    StatusMessage = "Export canceled";
+                    return;
                 }
-                StatusMessage = "Export completed successfully";
+
+                // Ask user to pick an export folder
+                var folderDialog = new CommonOpenFileDialog
+                {
+                    Title = "Select export folder",
+                    IsFolderPicker = true,
+                };
+
+                if (folderDialog.ShowDialog() != CommonFileDialogResult.Ok)
+                {
+                    StatusMessage = "Export canceled";
+                    return;
+                }
+
+                var exportDir = folderDialog.FileName;
+
+                // Decide target files
+                var targets = optionsWin.ExportAllFiles ? Files.ToList() : (SelectedFile != null ? new List<FileViewModel> { SelectedFile } : new List<FileViewModel>());
+                if (targets.Count == 0)
+                {
+                    StatusMessage = "No target files to export.";
+                    return;
+                }
+
+                int exportedCount = 0;
+                foreach (var file in targets)
+                {
+                    StatusMessage = $"Exporting {Path.GetFileName(file.FilePath)}...";
+
+                    switch (optionsWin.SelectedFormat)
+                    {
+                        case ExportOptionsWindow.ExportFormat.Csv:
+                        {
+                            var sb = new StringBuilder();
+                            sb.AppendLine("Key,Source,Translation");
+                            foreach (var entryVm in file.Entries)
+                            {
+                                var key = Csv(entryVm.Entry.Key);
+                                var src = Csv(entryVm.Entry.SourceText);
+                                var trg = Csv(entryVm.Entry.TranslatedText);
+                                sb.AppendLine($"{key},{src},{trg}");
+                            }
+                            var outPath = Path.Combine(exportDir, Path.GetFileNameWithoutExtension(file.FilePath) + ".csv");
+                            await FileService.SaveFileAsync(outPath, sb.ToString(), includeBom: true);
+                            break;
+                        }
+                        case ExportOptionsWindow.ExportFormat.Json:
+                        {
+                            var payload = file.Entries.Select(e => new { key = e.Entry.Key, source = e.Entry.SourceText, translation = e.Entry.TranslatedText });
+                            var json = JsonSerializer.Serialize(payload, new JsonSerializerOptions { WriteIndented = true });
+                            var outPath = Path.Combine(exportDir, Path.GetFileNameWithoutExtension(file.FilePath) + ".json");
+                            await FileService.SaveFileAsync(outPath, json, includeBom: true);
+                            break;
+                        }
+                        case ExportOptionsWindow.ExportFormat.Yaml:
+                        {
+                            // Use Paradox format writer
+                            var entries = file.Entries.Select(vm => vm.Entry).ToList();
+                            var header = $"l_{TargetLanguage}:"; // use selected target language
+                            var outPath = Path.Combine(exportDir, Path.GetFileNameWithoutExtension(file.FilePath) + ".yml");
+                            await ParadoxParser.SaveLocalizationAsync(entries, outPath, header);
+                            break;
+                        }
+                    }
+
+                    exportedCount++;
+                }
+
+                StatusMessage = $"Exported {exportedCount} file(s) to {exportDir}";
+                MessageBox.Show(StatusMessage, "Export", MessageBoxButton.OK, MessageBoxImage.Information);
             }
             catch (Exception ex)
             {
@@ -202,6 +297,14 @@ namespace ParadoxTranslator.ViewModels
                 MessageBox.Show($"Error during export:\n{ex.Message}", "Error", 
                                MessageBoxButton.OK, MessageBoxImage.Error);
             }
+        }
+
+        private static string Csv(string? value)
+        {
+            value ??= string.Empty;
+            var needsQuotes = value.Contains('"') || value.Contains(',') || value.Contains('\n') || value.Contains('\r');
+            var escaped = value.Replace("\"", "\"\"");
+            return needsQuotes ? $"\"{escaped}\"" : escaped;
         }
 
         private void OpenSettings(object? parameter)
