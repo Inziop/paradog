@@ -539,7 +539,11 @@ namespace ParadoxTranslator.ViewModels
         {
             try
             {
-                var settingsWindow = new SettingsWindow();
+                var settingsWindow = new SettingsWindow
+                {
+                    Owner = Application.Current.MainWindow,
+                    WindowStartupLocation = WindowStartupLocation.CenterOwner
+                };
                 settingsWindow.ShowDialog();
             }
             catch (Exception ex)
@@ -554,7 +558,11 @@ namespace ParadoxTranslator.ViewModels
         {
             try
             {
-                var statisticsWindow = new StatisticsWindow();
+                var statisticsWindow = new StatisticsWindow
+                {
+                    Owner = Application.Current.MainWindow,
+                    WindowStartupLocation = WindowStartupLocation.CenterOwner
+                };
                 statisticsWindow.ShowDialog();
             }
             catch (Exception ex)
@@ -569,7 +577,11 @@ namespace ParadoxTranslator.ViewModels
         {
             try
             {
-                var welcomeWindow = new WelcomeWindow();
+                var welcomeWindow = new WelcomeWindow
+                {
+                    Owner = Application.Current.MainWindow,
+                    WindowStartupLocation = WindowStartupLocation.CenterOwner
+                };
                 welcomeWindow.ShowDialog();
             }
             catch (Exception ex)
@@ -584,7 +596,11 @@ namespace ParadoxTranslator.ViewModels
         {
             try
             {
-                var aboutWindow = new AboutWindow();
+                var aboutWindow = new AboutWindow
+                {
+                    Owner = Application.Current.MainWindow,
+                    WindowStartupLocation = WindowStartupLocation.CenterOwner
+                };
                 aboutWindow.ShowDialog();
             }
             catch (Exception ex)
@@ -592,6 +608,44 @@ namespace ParadoxTranslator.ViewModels
                 StatusMessage = $"Error showing about screen: {ex.Message}";
                 MessageBox.Show($"Error showing about screen:\n{ex.Message}", "Error", 
                                MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        public async Task LoadFileAsync(string filePath)
+        {
+            try
+            {
+                // Check if already loaded
+                if (Files.Any(f => f.FilePath.Equals(filePath, StringComparison.OrdinalIgnoreCase)))
+                {
+                    return;
+                }
+
+                var entries = await ParadoxParser.ParseFileAsync(filePath);
+                var entryViewModels = entries.Select(e => new LocalizationEntryViewModel(e)).ToList();
+                
+                // Hook change tracking for autosave
+                foreach (var vmEntry in entryViewModels)
+                {
+                    if (_watchedEntries.Add(vmEntry))
+                    {
+                        vmEntry.PropertyChanged += OnEntryPropertyChanged;
+                    }
+                }
+
+                var fileViewModel = new FileViewModel
+                {
+                    FilePath = filePath,
+                    LastModified = FileService.GetFileModifiedTime(filePath),
+                    Entries = new ObservableCollection<LocalizationEntryViewModel>(entryViewModels)
+                };
+
+                Files.Add(fileViewModel);
+                SelectedFile = fileViewModel;
+            }
+            catch (Exception ex)
+            {
+                StatusMessage = $"Failed to load file: {ex.Message}";
             }
         }
 

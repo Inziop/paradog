@@ -30,4 +30,10 @@ public partial class ExportOptionsWindow : Window
         DialogResult = false;
         Close();
     }
+
+    private void OnWindowClose(object sender, RoutedEventArgs e)
+    {
+        DialogResult = false;
+        Close();
+    }
 }

@@ -8,9 +8,57 @@
         Title="Paradox Translator" Height="900" Width="1400"
         WindowStartupLocation="CenterScreen"
         MinHeight="600" MinWidth="1000"
-        Background="#1E1E1E">
+        Background="#1E1E1E"
+        WindowStyle="None"
+        AllowsTransparency="True"
+        ResizeMode="CanResize">
+    
+    <WindowChrome.WindowChrome>
+        <WindowChrome CaptionHeight="40" 
+                      ResizeBorderThickness="5"
+                      GlassFrameThickness="0"
+                      CornerRadius="8"/>
+    </WindowChrome.WindowChrome>
     
     <Window.Resources>
+        <!-- Merge Shared Styles -->
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="Styles/SharedStyles.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+
+        <!-- Window Button Style -->
+        <Style x:Key="WindowButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Width" Value="46"/>
+            <Setter Property="Height" Value="40"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="WindowChrome.IsHitTestVisibleInChrome" Value="True"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#3E3E42"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="CloseButtonStyle" TargetType="Button" BasedOn="{StaticResource WindowButtonStyle}">
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#E81123"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
         <Style x:Key="AICheckBoxStyle" TargetType="CheckBox">
             <Setter Property="Foreground" Value="White"/>
             <Setter Property="VerticalAlignment" Value="Center"/>
@@ -39,95 +87,118 @@
                 </Trigger>
             </Style.Triggers>
         </Style>
-
-        <Style x:Key="HeaderComboBoxStyle" TargetType="ComboBox">
-            <Setter Property="Foreground" Value="White" />
-            <Setter Property="Background" Value="#2D2D30" />
-            <Setter Property="BorderBrush" Value="#3C3C3C" />
-            <Setter Property="Padding" Value="6,2" />
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="ComboBox">
-                        <Grid>
-                            <Border x:Name="Bd"
-                                    Background="{TemplateBinding Background}"
-                                    BorderBrush="{TemplateBinding BorderBrush}"
-                                    BorderThickness="{TemplateBinding BorderThickness}"
-                                    CornerRadius="2">
-                                <DockPanel>
-                                    <ContentPresenter x:Name="ContentSite"
-                                                      ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}"
-                                                      Content="{TemplateBinding SelectionBoxItem}"
-                                                      VerticalAlignment="Center"
-                                                      Margin="6,0,6,0"
-                                                      RecognizesAccessKey="True" />
-                                    <ToggleButton DockPanel.Dock="Right" Focusable="False" IsChecked="{Binding IsDropDownOpen, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}"
-                                                  Background="Transparent" BorderThickness="0" Width="24">
-                                        <Path Data="M 0 0 L 4 4 L 8 0 Z" Fill="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                    </ToggleButton>
-                                </DockPanel>
-                            </Border>
-                            <Popup Name="Popup"
-                                   Placement="Bottom"
-                                   IsOpen="{TemplateBinding IsDropDownOpen}"
-                                   AllowsTransparency="True"
-                                   Focusable="False"
-                                   PopupAnimation="Slide">
-                                <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="1">
-                                    <ScrollViewer CanContentScroll="True">
-                                        <ItemsPresenter/>
-                                    </ScrollViewer>
-                                </Border>
-                            </Popup>
-                        </Grid>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsEnabled" Value="False">
-                                <Setter TargetName="Bd" Property="Opacity" Value="0.6" />
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
+        <!-- HeaderComboBoxStyle removed - using ModernComboBox from SharedStyles.xaml -->
+        </ResourceDictionary>
     </Window.Resources>
 
-    <Grid>
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
-            <RowDefinition Height="Auto"/>
-        </Grid.RowDefinitions>
+    <Border Background="#1E1E1E" CornerRadius="8" BorderBrush="#3E3E42" BorderThickness="1">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="40"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
         
-        <!-- Header -->
-        <Border Grid.Row="0" Background="#2D2D30" Padding="15">
-            <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/>
-                </Grid.ColumnDefinitions>
+            <!-- Custom Title Bar -->
+            <Border Grid.Row="0" Background="#2D2D30" CornerRadius="8,8,0,0">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    
+                    <!-- App Title -->
+                    <StackPanel Grid.Column="0" Orientation="Horizontal" Margin="15,0,0,0" VerticalAlignment="Center">
+                        <TextBlock Text="🎮" FontSize="16" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                        <TextBlock x:Name="ProjectNameTextBlock" Text="Paradox Translator" 
+                                   FontSize="14" FontWeight="SemiBold" 
+                                   Foreground="White" VerticalAlignment="Center"/>
+                    </StackPanel>
+                    
+                    <!-- Window Controls -->
+                    <StackPanel Grid.Column="2" Orientation="Horizontal" HorizontalAlignment="Right">
+                        <Button x:Name="MinimizeButton" Content="─" 
+                                Style="{StaticResource WindowButtonStyle}"
+                                Click="OnMinimize"
+                                ToolTip="Minimize"/>
+                        <Button x:Name="MaximizeButton" Content="□" 
+                                Style="{StaticResource WindowButtonStyle}"
+                                Click="OnMaximize"
+                                ToolTip="Maximize"/>
+                        <Button x:Name="CloseButton" Content="✕" 
+                                Style="{StaticResource CloseButtonStyle}"
+                                Click="OnCloseWindow"
+                                ToolTip="Close"/>
+                    </StackPanel>
+                </Grid>
+            </Border>
+        
+            <!-- Header/Toolbar -->
+            <Border Grid.Row="1" Background="#2D2D30" Padding="15,10" BorderBrush="#3E3E42" BorderThickness="0,1,0,1">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
 
-                <StackPanel Grid.Column="0" Orientation="Horizontal">
-                    <TextBlock Text="🎮" FontSize="24" Margin="0,0,10,0"/>
-                    <TextBlock Text="Paradox Translator" FontSize="20" FontWeight="Bold" 
-                               Foreground="White" VerticalAlignment="Center"/>
-                </StackPanel>
+                    <!-- Project Switch Button -->
+                    <Button Grid.Column="0" x:Name="SwitchProjectButton" Content="⇄ Switch" 
+                            Click="OnSwitchProject"
+                            Background="#6C757D" Style="{StaticResource HeaderButtonStyle}"
+                            Padding="12,6" Margin="0,0,15,0"
+                            ToolTip="Switch to another project"/>
 
-                <StackPanel Grid.Column="1" Orientation="Horizontal">
+                    <!-- Spacer -->
+                    <Grid Grid.Column="1"/>
+
+                    <!-- Controls -->
+                    <StackPanel Grid.Column="2" Orientation="Horizontal">
                     <!-- Language selectors -->
                     <Border Background="#252526" CornerRadius="4" Padding="8,4" Margin="0,0,10,0">
                         <DockPanel>
                             <TextBlock Text="From:" Foreground="#CCCCCC" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                            <ComboBox Width="120" Style="{StaticResource HeaderComboBoxStyle}"
+                            <ComboBox MinWidth="100" 
+                                     Background="#FFFFFF" Foreground="#000000"
+                                     TextElement.Foreground="#000000"
+                                     BorderBrush="#555555" BorderThickness="1"
                                      SelectedValuePath="Tag"
                                      SelectedValue="{Binding SourceLanguage, Mode=TwoWay}">
-                                <ComboBoxItem Content="English" Tag="en" />
-                                <ComboBoxItem Content="French" Tag="fr" />
-                                <ComboBoxItem Content="German" Tag="de" />
-                                <ComboBoxItem Content="Spanish" Tag="es" />
-                                <ComboBoxItem Content="Vietnamese" Tag="vi" />
-                                <ComboBoxItem Content="Chinese" Tag="zh" />
-                                <ComboBoxItem Content="Japanese" Tag="ja" />
-                                <ComboBoxItem Content="Korean" Tag="ko" />
+                                <ComboBox.Resources>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Foreground" Value="#000000"/>
+                                    </Style>
+                                    <Style TargetType="ComboBoxItem">
+                                        <Setter Property="Foreground" Value="#000000"/>
+                                        <Setter Property="Background" Value="#FFFFFF"/>
+                                    </Style>
+                                </ComboBox.Resources>
+                                <ComboBoxItem Tag="en">
+                                    <TextBlock Text="English" Foreground="Black"/>
+                                </ComboBoxItem>
+                                <ComboBoxItem Tag="fr">
+                                    <TextBlock Text="French" Foreground="Black"/>
+                                </ComboBoxItem>
+                                <ComboBoxItem Tag="de">
+                                    <TextBlock Text="German" Foreground="Black"/>
+                                </ComboBoxItem>
+                                <ComboBoxItem Tag="es">
+                                    <TextBlock Text="Spanish" Foreground="Black"/>
+                                </ComboBoxItem>
+                                <ComboBoxItem Tag="vi">
+                                    <TextBlock Text="Vietnamese" Foreground="Black"/>
+                                </ComboBoxItem>
+                                <ComboBoxItem Tag="zh">
+                                    <TextBlock Text="Chinese" Foreground="Black"/>
+                                </ComboBoxItem>
+                                <ComboBoxItem Tag="ja">
+                                    <TextBlock Text="Japanese" Foreground="Black"/>
+                                </ComboBoxItem>
+                                <ComboBoxItem Tag="ko">
+                                    <TextBlock Text="Korean" Foreground="Black"/>
+                                </ComboBoxItem>
                             </ComboBox>
                         </DockPanel>
                     </Border>
@@ -135,17 +206,45 @@
                     <Border Background="#252526" CornerRadius="4" Padding="8,4" Margin="0,0,10,0">
                         <DockPanel>
                             <TextBlock Text="To:" Foreground="#CCCCCC" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                            <ComboBox Width="120" Style="{StaticResource HeaderComboBoxStyle}"
+                            <ComboBox MinWidth="100" 
+                                     Background="#FFFFFF" Foreground="#000000"
+                                     TextElement.Foreground="#000000"
+                                     BorderBrush="#555555" BorderThickness="1"
                                      SelectedValuePath="Tag"
                                      SelectedValue="{Binding TargetLanguage, Mode=TwoWay}">
-                                <ComboBoxItem Content="Vietnamese" Tag="vi" />
-                                <ComboBoxItem Content="Chinese" Tag="zh" />
-                                <ComboBoxItem Content="Japanese" Tag="ja" />
-                                <ComboBoxItem Content="Korean" Tag="ko" />
-                                <ComboBoxItem Content="English" Tag="en" />
-                                <ComboBoxItem Content="French" Tag="fr" />
-                                <ComboBoxItem Content="German" Tag="de" />
-                                <ComboBoxItem Content="Spanish" Tag="es" />
+                                <ComboBox.Resources>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Foreground" Value="#000000"/>
+                                    </Style>
+                                    <Style TargetType="ComboBoxItem">
+                                        <Setter Property="Foreground" Value="#000000"/>
+                                        <Setter Property="Background" Value="#FFFFFF"/>
+                                    </Style>
+                                </ComboBox.Resources>
+                                <ComboBoxItem Tag="vi">
+                                    <TextBlock Text="Vietnamese" Foreground="Black"/>
+                                </ComboBoxItem>
+                                <ComboBoxItem Tag="zh">
+                                    <TextBlock Text="Chinese" Foreground="Black"/>
+                                </ComboBoxItem>
+                                <ComboBoxItem Tag="ja">
+                                    <TextBlock Text="Japanese" Foreground="Black"/>
+                                </ComboBoxItem>
+                                <ComboBoxItem Tag="ko">
+                                    <TextBlock Text="Korean" Foreground="Black"/>
+                                </ComboBoxItem>
+                                <ComboBoxItem Tag="en">
+                                    <TextBlock Text="English" Foreground="Black"/>
+                                </ComboBoxItem>
+                                <ComboBoxItem Tag="fr">
+                                    <TextBlock Text="French" Foreground="Black"/>
+                                </ComboBoxItem>
+                                <ComboBoxItem Tag="de">
+                                    <TextBlock Text="German" Foreground="Black"/>
+                                </ComboBoxItem>
+                                <ComboBoxItem Tag="es">
+                                    <TextBlock Text="Spanish" Foreground="Black"/>
+                                </ComboBoxItem>
                             </ComboBox>
                         </DockPanel>
                     </Border>
@@ -170,13 +269,33 @@
                     <Border Background="#252526" CornerRadius="4" Padding="8,4" Margin="0,0,10,0">
                         <DockPanel>
                             <TextBlock Text="Filter:" Foreground="#CCCCCC" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                            <ComboBox Width="120" Style="{StaticResource HeaderComboBoxStyle}"
+                            <ComboBox MinWidth="90" 
+                                     Background="#FFFFFF" Foreground="#000000"
+                                     TextElement.Foreground="#000000"
+                                     BorderBrush="#555555" BorderThickness="1"
                                      SelectedValuePath="Tag"
                                      SelectedValue="{Binding FilterMode, Mode=TwoWay}">
-                                <ComboBoxItem Content="All" Tag="All" IsSelected="True"/>
-                                <ComboBoxItem Content="Translated" Tag="Translated"/>
-                                <ComboBoxItem Content="Untranslated" Tag="Untranslated"/>
-                                <ComboBoxItem Content="Has Issues" Tag="HasIssues"/>
+                                <ComboBox.Resources>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Foreground" Value="#000000"/>
+                                    </Style>
+                                    <Style TargetType="ComboBoxItem">
+                                        <Setter Property="Foreground" Value="#000000"/>
+                                        <Setter Property="Background" Value="#FFFFFF"/>
+                                    </Style>
+                                </ComboBox.Resources>
+                                <ComboBoxItem Tag="All" IsSelected="True">
+                                    <TextBlock Text="All" Foreground="Black"/>
+                                </ComboBoxItem>
+                                <ComboBoxItem Tag="Translated">
+                                    <TextBlock Text="Translated" Foreground="Black"/>
+                                </ComboBoxItem>
+                                <ComboBoxItem Tag="Untranslated">
+                                    <TextBlock Text="Untranslated" Foreground="Black"/>
+                                </ComboBoxItem>
+                                <ComboBoxItem Tag="HasIssues">
+                                    <TextBlock Text="Has Issues" Foreground="Black"/>
+                                </ComboBoxItem>
                             </ComboBox>
                         </DockPanel>
                     </Border>
@@ -198,19 +317,19 @@
                     <Button Content="ℹ️ About" Command="{Binding ShowAboutCommand}" 
                             Margin="10,0,0,0" Background="#6C757D" Style="{StaticResource HeaderButtonStyle}"
                             ToolTip="About this application"/>
-                </StackPanel>
-            </Grid>
-        </Border>
+                    </StackPanel>
+                </Grid>
+            </Border>
 
-        <!-- Main Content -->
-        <Grid Grid.Row="1" Margin="15">
+            <!-- Main Content -->
+            <Grid Grid.Row="2" Margin="0">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="280"/>
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
 
             <!-- File List -->
-            <Border Grid.Column="0" Background="#252526" CornerRadius="4" Margin="0,0,15,0">
+            <Border Grid.Column="0" Background="#252526" CornerRadius="0" Margin="0">
                 <DockPanel>
                     <!-- Search Box -->
                     <Border DockPanel.Dock="Top" Background="#2D2D30" Padding="10" BorderThickness="0,0,0,1" BorderBrush="#3E3E42">
@@ -336,7 +455,7 @@
             </Border>
 
             <!-- Translation Grid -->
-            <Border Grid.Column="1" Background="#252526" CornerRadius="4">
+            <Border Grid.Column="1" Background="#252526" CornerRadius="0">
                 <DockPanel>
                     <!-- Batch Action Toolbar -->
                     <Border DockPanel.Dock="Top" Background="#2D2D30" Padding="10" BorderThickness="0,0,0,1" BorderBrush="#3E3E42">
@@ -380,11 +499,7 @@
                           ScrollViewer.HorizontalScrollBarVisibility="Auto"
                           RowHeaderWidth="0">
                     <DataGrid.Resources>
-                        <Style TargetType="ScrollBar">
-                            <Setter Property="Background" Value="#2D2D30"/>
-                            <Setter Property="BorderBrush" Value="#3E3E42"/>
-                            <Setter Property="Width" Value="8"/>
-                        </Style>
+                        <!-- ScrollBar style is in SharedStyles.xaml -->
                         <Style TargetType="DataGridRow">
                             <Setter Property="Background" Value="Transparent"/>
                             <Style.Triggers>
@@ -514,26 +629,29 @@
         </Grid>
 
         <!-- Status Bar -->
-        <Border Grid.Row="2" Background="#007ACC" Height="25">
-            <DockPanel LastChildFill="False" Margin="10,0">
+        <Border Grid.Row="3" Background="#007ACC" Height="28" CornerRadius="0">
+            <DockPanel LastChildFill="False" Margin="15,0">
                 <TextBlock Text="{Binding StatusMessage}" 
                            Foreground="White" 
+                           FontSize="12"
                            VerticalAlignment="Center"
                            DockPanel.Dock="Left"/>
                 <TextBlock Text="{Binding ProgressText}" 
                            Foreground="White" 
+                           FontSize="12"
                            VerticalAlignment="Center"
                            DockPanel.Dock="Right"/>
             </DockPanel>
         </Border>
         
         <!-- Toast Container (Top-Right) -->
-        <Grid Grid.RowSpan="3" IsHitTestVisible="False">
+        <Grid Grid.Row="1" Grid.RowSpan="3" IsHitTestVisible="False">
             <StackPanel x:Name="ToastContainer" 
                        HorizontalAlignment="Right" 
                        VerticalAlignment="Top"
                        Margin="20,20,20,0">
             </StackPanel>
         </Grid>
-    </Grid>
+        </Grid>
+    </Border>
 </Window>
