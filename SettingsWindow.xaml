@@ -1,13 +1,18 @@
 <Window x:Class="ParadoxTranslator.SettingsWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Settings - Paradox Translator" Height="640" Width="820"
+        xmlns:services="clr-namespace:ParadoxTranslator.Services"
+        Title="Settings - Paradox Translator" Height="720" Width="900"
         WindowStartupLocation="CenterOwner" 
         Background="Transparent"
         WindowStyle="None"
         AllowsTransparency="True"
         ResizeMode="CanResize"
-        MinHeight="500" MinWidth="700">
+        MinHeight="600" MinWidth="800">
+    
+    <Window.Resources>
+        <services:LocalizationService x:Key="Loc"/>
+    </Window.Resources>
     
     <WindowChrome.WindowChrome>
         <WindowChrome CaptionHeight="40" 
@@ -160,7 +165,7 @@
             
             <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center" Margin="15,0">
                 <TextBlock Text="⚙️" FontSize="18" Margin="0,0,8,0"/>
-                <TextBlock Text="Settings" FontSize="14" FontWeight="SemiBold" 
+                <TextBlock x:Name="SettingsTitleText" Text="Settings" FontSize="14" FontWeight="SemiBold" 
                            Foreground="White" VerticalAlignment="Center"/>
             </StackPanel>
             
@@ -174,28 +179,28 @@
         <!-- Header -->
         <Border Grid.Row="1" Background="#2D2D30" Padding="20,15">
             <StackPanel Orientation="Horizontal">
-                <TextBlock Text="Configure your translation preferences" FontSize="14" 
+                <TextBlock x:Name="SettingsDescriptionText" Text="Configure your translation preferences" FontSize="14" 
                            Foreground="#CCCCCC" VerticalAlignment="Center"/>
             </StackPanel>
         </Border>
         
         <!-- Main Content -->
-        <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto" Padding="20">
-            <StackPanel>
+        <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto" Padding="25">
+            <StackPanel MaxWidth="1200">
                 <!-- Translation Engine -->
-                <GroupBox Header="Translation Engine" Margin="0,0,0,20" 
-                          Foreground="White" BorderBrush="#3C3C3C">
-                    <StackPanel Margin="15">
+                <GroupBox Header="Translation Engine" Margin="0,0,0,25" 
+                          Foreground="White" BorderBrush="#3C3C3C" Padding="5">
+                    <StackPanel Margin="20">
                             <TextBlock Text="Select your preferred translation service:" 
-                                       Margin="0,0,0,10" Foreground="#CCCCCC"/>
-                                <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
-                                    <CheckBox x:Name="EnableAICheckBox" Content="Enable AI translation" Foreground="White" Margin="0,0,15,0"/>
+                                       Margin="0,0,0,12" Foreground="#CCCCCC" FontSize="13"/>
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
+                                    <CheckBox x:Name="EnableAICheckBox" Content="Enable AI translation" Foreground="White" FontSize="13" Margin="0,0,15,0"/>
                                     <TextBlock Text="(" Foreground="#888888" VerticalAlignment="Center"/>
-                                    <TextBlock Text="If enabled, translations use the configured AI engine and API key" Foreground="#888888" VerticalAlignment="Center"/>
+                                    <TextBlock Text="If enabled, translations use the configured AI engine and API key" Foreground="#888888" VerticalAlignment="Center" FontSize="12"/>
                                     <TextBlock Text=")" Foreground="#888888" VerticalAlignment="Center"/>
                                 </StackPanel>
 
-                    <ComboBox x:Name="EngineComboBox" Width="200" Margin="0,0,0,15"
+                    <ComboBox x:Name="EngineComboBox" Width="250" Margin="0,0,0,15"
                             Style="{StaticResource SettingsComboBoxStyle}">
                         <ComboBoxItem Content="Google Translate" Tag="google" IsSelected="True"
                                      Background="#2D2D30" Foreground="White"/>
@@ -215,60 +220,60 @@
                 <!-- Glossary removed to restore original settings UI -->
                 
                 <!-- API Configuration -->
-                <GroupBox Header="API Configuration" Margin="0,0,0,20" 
-                          Foreground="White" BorderBrush="#3C3C3C">
-                    <StackPanel Margin="15">
+                <GroupBox Header="API Configuration" Margin="0,0,0,25" 
+                          Foreground="White" BorderBrush="#3C3C3C" Padding="5">
+                    <StackPanel Margin="20">
                         <TextBlock Text="API Keys (Optional - for premium features):" 
-                                   Margin="0,0,0,10" Foreground="#CCCCCC"/>
+                                   Margin="0,0,0,12" Foreground="#CCCCCC" FontSize="13"/>
                         
-                        <Grid>
+                        <Grid Margin="0,0,0,12">
                             <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="150"/>
                                 <ColumnDefinition Width="*"/>
                                 <ColumnDefinition Width="Auto"/>
                                 <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
                             
                             <TextBlock Grid.Column="0" Text="Google API Key:" 
-                                       VerticalAlignment="Center" Margin="0,0,10,0"/>
+                                       VerticalAlignment="Center" Margin="0,0,10,0" FontSize="13"/>
                             <TextBox Grid.Column="1" x:Name="GoogleApiKeyTextBox" 
                                      Background="#2D2D30" Foreground="White" 
-                                     BorderBrush="#3C3C3C" Padding="8,4" Margin="0,0,10,0"/>
-                            <Button Grid.Column="2" Content="Test" Width="60" 
+                                     BorderBrush="#3C3C3C" Padding="10,6" Margin="0,0,10,0" FontSize="13"/>
+                            <Button Grid.Column="2" Content="Test" Width="70" 
                                 Style="{StaticResource HeaderButtonStyle}" Click="OnTestGoogleClick"/>
-                            <Button Grid.Column="3" Content="Get Key" Width="60" Margin="5,0,0,0"
+                            <Button Grid.Column="3" Content="Get Key" Width="80" Margin="8,0,0,0"
                                 Style="{StaticResource HeaderButtonStyle}" Click="OnGetGoogleKeyClick"/>
                         </Grid>
                         
-                        <Grid Margin="0,10,0,0">
+                        <Grid Margin="0,0,0,12">
                             <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="150"/>
                                 <ColumnDefinition Width="*"/>
                                 <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
                             
                             <TextBlock Grid.Column="0" Text="DeepL API Key:" 
-                                       VerticalAlignment="Center" Margin="0,0,10,0"/>
+                                       VerticalAlignment="Center" Margin="0,0,10,0" FontSize="13"/>
                             <TextBox Grid.Column="1" x:Name="DeepLApiKeyTextBox" 
                                      Background="#2D2D30" Foreground="White" 
-                                     BorderBrush="#3C3C3C" Padding="8,4" Margin="0,0,10,0"/>
-                <Button Grid.Column="2" Content="Test" Width="60" 
+                                     BorderBrush="#3C3C3C" Padding="10,6" Margin="0,0,10,0" FontSize="13"/>
+                <Button Grid.Column="2" Content="Test" Width="70" 
                     Style="{StaticResource HeaderButtonStyle}" Click="OnTestDeepLClick"/>
                         </Grid>
 
-                        <Grid Margin="0,10,0,0">
+                        <Grid Margin="0,0,0,12">
                             <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="150"/>
                                 <ColumnDefinition Width="*"/>
                                 <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
                             
                             <TextBlock Grid.Column="0" Text="Gemini API Key:" 
-                                       VerticalAlignment="Center" Margin="0,0,10,0"/>
+                                       VerticalAlignment="Center" Margin="0,0,10,0" FontSize="13"/>
                             <TextBox Grid.Column="1" x:Name="GeminiApiKeyTextBox" 
                                      Background="#2D2D30" Foreground="White" 
-                                     BorderBrush="#3C3C3C" Padding="8,4" Margin="0,0,10,0"/>
-                <Button Grid.Column="2" Content="Test" Width="60" 
+                                     BorderBrush="#3C3C3C" Padding="10,6" Margin="0,0,10,0" FontSize="13"/>
+                <Button Grid.Column="2" Content="Test" Width="70" 
                     Style="{StaticResource HeaderButtonStyle}" Click="OnTestGeminiClick"/>
                         </Grid>
 
@@ -278,17 +283,17 @@
                                   Background="Transparent"
                                   Foreground="#CCCCCC"
                                   BorderThickness="0">
-                            <Grid Margin="0,10,0,0">
+                            <Grid Margin="0,12,0,0">
                                 <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="150"/>
                                     <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
                                 
                                 <TextBlock Grid.Column="0" Text="API Endpoint:" 
-                                           VerticalAlignment="Center" Margin="0,0,10,0"/>
+                                           VerticalAlignment="Center" Margin="0,0,10,0" FontSize="13"/>
                                 <TextBox Grid.Column="1" x:Name="GeminiEndpointTextBox" 
                                          Background="#2D2D30" Foreground="White" 
-                                         BorderBrush="#3C3C3C" Padding="8,4"
+                                         BorderBrush="#3C3C3C" Padding="10,6" FontSize="12"
                                          Text="https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent"/>
                             </Grid>
                         </Expander>
@@ -296,37 +301,49 @@
                 </GroupBox>
                 
                 <!-- Translation Settings -->
-                <GroupBox Header="Translation Settings" Margin="0,0,0,20" 
-                          Foreground="White" BorderBrush="#3C3C3C">
-                    <StackPanel Margin="15">
+                <GroupBox Header="Translation Settings" Margin="0,0,0,25" 
+                          Foreground="White" BorderBrush="#3C3C3C" Padding="5">
+                    <StackPanel Margin="20">
                         <CheckBox x:Name="OverwriteExistingCheckBox" Content="Overwrite existing translations" 
-                                  Foreground="White" Margin="0,0,0,10" IsChecked="True"/>
+                                  Foreground="White" FontSize="13" Margin="0,0,0,12" IsChecked="True"/>
                         
                         <CheckBox x:Name="ValidatePlaceholdersCheckBox" Content="Validate placeholders automatically" 
-                                  Foreground="White" Margin="0,0,0,10" IsChecked="True"/>
+                                  Foreground="White" FontSize="13" Margin="0,0,0,12" IsChecked="True"/>
                         
                         <CheckBox x:Name="CreateBackupCheckBox" Content="Create backup before saving" 
-                                  Foreground="White" Margin="0,0,0,10" IsChecked="True"/>
+                                  Foreground="White" FontSize="13" Margin="0,0,0,12" IsChecked="True"/>
                         
                         <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
-                            <TextBlock Text="Max concurrent requests:" VerticalAlignment="Center" 
-                                       Margin="0,0,10,0"/>
-                            <TextBox x:Name="MaxConcurrentTextBox" Text="3" Width="60" 
-                                     Background="#2D2D30" Foreground="White" 
-                                     BorderBrush="#3C3C3C" Padding="8,4" 
+                            <TextBlock Text="Max concurrent requests:" VerticalAlignment="Center" FontSize="13"
+                                       Margin="0,0,12,0"/>
+                            <TextBox x:Name="MaxConcurrentTextBox" Text="3" Width="80" 
+                                     Background="#2D2D30" Foreground="White" FontSize="13"
+                                     BorderBrush="#3C3C3C" Padding="10,6" 
                                      HorizontalContentAlignment="Center"/>
                         </StackPanel>
                     </StackPanel>
                 </GroupBox>
                 
                 <!-- UI Settings -->
-                <GroupBox Header="Interface Settings" Margin="0,0,0,20" 
-                          Foreground="White" BorderBrush="#3C3C3C">
-                    <StackPanel Margin="15">
-                        <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
-                            <TextBlock Text="Theme:" VerticalAlignment="Center" 
-                                       Margin="0,0,10,0"/>
-                            <ComboBox x:Name="ThemeComboBox" Width="150" 
+                <GroupBox Header="Interface Settings" Margin="0,0,0,25" 
+                          Foreground="White" BorderBrush="#3C3C3C" Padding="5">
+                    <StackPanel Margin="20">
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
+                            <TextBlock Text="Language:" VerticalAlignment="Center" FontSize="13"
+                                       Margin="0,0,12,0"/>
+                            <ComboBox x:Name="LanguageComboBox" Width="180" 
+                                      Style="{StaticResource SettingsComboBoxStyle}">
+                                <ComboBoxItem Content="English" Tag="en" IsSelected="True"
+                                              Background="#2D2D30" Foreground="White"/>
+                                <ComboBoxItem Content="Tiếng Việt" Tag="vi"
+                                              Background="#2D2D30" Foreground="White"/>
+                            </ComboBox>
+                        </StackPanel>
+                        
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
+                            <TextBlock Text="Theme:" VerticalAlignment="Center" FontSize="13"
+                                       Margin="0,0,12,0"/>
+                            <ComboBox x:Name="ThemeComboBox" Width="180" 
                                               Style="{StaticResource SettingsComboBoxStyle}">
                                 <ComboBoxItem Content="Dark" Tag="Dark" IsSelected="True"
                                                       Background="#2D2D30" Foreground="White"/>
@@ -338,19 +355,19 @@
                         </StackPanel>
                         
                         <CheckBox x:Name="ShowProgressAnimationsCheckBox" Content="Show progress animations" 
-                                  Foreground="White" Margin="0,0,0,10" IsChecked="True"/>
+                                  Foreground="White" FontSize="13" Margin="0,0,0,12" IsChecked="True"/>
                         
                         <CheckBox x:Name="AutoSaveCheckBox" Content="Auto-save every 5 minutes" 
-                                  Foreground="White" Margin="0,0,0,10" IsChecked="False"/>
+                                  Foreground="White" FontSize="13" Margin="0,0,0,12" IsChecked="False"/>
                     </StackPanel>
                 </GroupBox>
                 
                 <!-- Advanced Settings -->
-                <GroupBox Header="Advanced Settings" Margin="0,0,0,20" 
-                          Foreground="White" BorderBrush="#3C3C3C">
-                    <StackPanel Margin="15">
-                        <TextBlock Text="Translation Quality:" Margin="0,0,0,10" Foreground="#CCCCCC"/>
-                        <ComboBox x:Name="QualityComboBox" Width="200" 
+                <GroupBox Header="Advanced Settings" Margin="0,0,0,25" 
+                          Foreground="White" BorderBrush="#3C3C3C" Padding="5">
+                    <StackPanel Margin="20">
+                        <TextBlock Text="Translation Quality:" Margin="0,0,0,12" Foreground="#CCCCCC" FontSize="13"/>
+                        <ComboBox x:Name="QualityComboBox" Width="250" 
                             Style="{StaticResource SettingsComboBoxStyle}" Margin="0,0,0,15">
                             <ComboBoxItem Content="Fast (Lower Quality)" Tag="Fast"
                                 Background="#2D2D30" Foreground="White"/>
@@ -361,31 +378,31 @@
                         </ComboBox>
                         
                         <CheckBox x:Name="EnableLoggingCheckBox" Content="Enable detailed logging" 
-                                  Foreground="White" Margin="0,0,0,10" IsChecked="False"/>
+                                  Foreground="White" FontSize="13" Margin="0,0,0,12" IsChecked="False"/>
                         
                         <CheckBox x:Name="ShowDebugInfoCheckBox" Content="Show debug information" 
-                                  Foreground="White" Margin="0,0,0,10" IsChecked="False"/>
+                                  Foreground="White" FontSize="13" Margin="0,0,0,12" IsChecked="False"/>
                     </StackPanel>
                 </GroupBox>
             </StackPanel>
         </ScrollViewer>
         
         <!-- Footer -->
-        <Border Grid.Row="3" Background="#252526" Padding="20" BorderBrush="#3E3E42" BorderThickness="0,1,0,0">
+        <Border Grid.Row="3" Background="#252526" Padding="25,15" BorderBrush="#3E3E42" BorderThickness="0,1,0,0">
         <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-            <Button Content="Reset to Defaults" Margin="0,0,10,0" 
+            <Button x:Name="ResetButton" Content="Reset to Defaults" Margin="0,0,12,0" 
                 Background="#666666" Foreground="White" 
-                BorderThickness="0" Padding="15,8" Cursor="Hand"
+                BorderThickness="0" Padding="18,10" Cursor="Hand" FontSize="13"
                 Style="{StaticResource HeaderButtonStyle}"
                 Click="OnResetClick"/>
-            <Button Content="Cancel" Margin="0,0,10,0" 
+            <Button x:Name="CancelButton" Content="Cancel" Margin="0,0,12,0" 
                 Background="#666666" Foreground="White" 
-                BorderThickness="0" Padding="15,8" Cursor="Hand"
+                BorderThickness="0" Padding="18,10" Cursor="Hand" FontSize="13"
                 Style="{StaticResource HeaderButtonStyle}"
                 Click="OnCancelClick"/>
-            <Button Content="Save Settings" 
+            <Button x:Name="SaveButton" Content="Save Settings" 
                 Background="#007ACC" Foreground="White" 
-                BorderThickness="0" Padding="15,8" Cursor="Hand"
+                BorderThickness="0" Padding="18,10" Cursor="Hand" FontSize="13" FontWeight="SemiBold"
                 Style="{StaticResource HeaderButtonStyle}"
                 Click="OnSaveClick"/>
         </StackPanel>

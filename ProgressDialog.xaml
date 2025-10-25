@@ -16,6 +16,7 @@
         <Border Grid.Row="0" Background="#2D2D30" Padding="20">
             <StackPanel Orientation="Horizontal">
                 <TextBlock Text="🔄" FontSize="24" Margin="0,0,10,0"/>
+                <Control x:Name="HeaderSpinner" Style="{StaticResource LoadingSpinner}" Visibility="Collapsed" Margin="8,0,0,0"/>
                 <StackPanel>
                     <TextBlock Text="Translating..." FontSize="18" FontWeight="Bold" 
                                Foreground="White"/>

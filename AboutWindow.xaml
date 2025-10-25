@@ -68,7 +68,7 @@
                 <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
             
-            <TextBlock Grid.Column="0" Text="About Paradox Translator" FontSize="14" FontWeight="SemiBold" 
+            <TextBlock Grid.Column="0" x:Name="TitleText" Text="About Paradox Translator" FontSize="14" FontWeight="SemiBold" 
                        Foreground="White" VerticalAlignment="Center" Margin="15,0"/>
             
             <Button Grid.Column="1" Content="✕" Style="{StaticResource CloseButtonStyle}" Click="OnWindowClose"/>
@@ -79,11 +79,11 @@
             <StackPanel Orientation="Horizontal">
                 <TextBlock Text="🎮" FontSize="48" Margin="0,0,20,0"/>
                 <StackPanel>
-                    <TextBlock Text="Paradox Translator" FontSize="28" FontWeight="Bold" 
+                    <TextBlock x:Name="AppNameText" Text="Paradox Translator" FontSize="28" FontWeight="Bold" 
                                Foreground="White"/>
-                    <TextBlock Text="Version 1.0.0" FontSize="16" 
+                    <TextBlock x:Name="VersionText" Text="Version 1.0.0" FontSize="16" 
                                Foreground="#CCCCCC" Margin="0,5,0,0"/>
-                    <TextBlock Text="Professional localization tool for Paradox games" FontSize="14" 
+                    <TextBlock x:Name="SubtitleText" Text="Professional localization tool for Paradox games" FontSize="14" 
                                Foreground="#888888" Margin="0,2,0,0"/>
                 </StackPanel>
             </StackPanel>
@@ -93,7 +93,7 @@
         <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto" Padding="30">
             <StackPanel>
                 <!-- Description -->
-                <TextBlock Text="A powerful WPF application designed specifically for translating Paradox Interactive game localization files. Built with modern technology and user-friendly interface." 
+                <TextBlock x:Name="DescriptionText" Text="A powerful WPF application designed specifically for translating Paradox Interactive game localization files. Built with modern technology and user-friendly interface." 
                            FontSize="14" Foreground="#CCCCCC" TextWrapping="Wrap" Margin="0,0,0,25"/>
                 
                 <!-- Features -->
@@ -177,11 +177,11 @@
         <!-- Footer -->
         <Border Grid.Row="3" Background="#252526" Padding="20" BorderBrush="#3E3E42" BorderThickness="0,1,0,0">
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                <Button Content="GitHub Repository" Click="OnGitHubClick"
+                <Button x:Name="GitHubButton" Content="GitHub Repository" Click="OnGitHubClick"
                         Background="#007ACC" Foreground="White" 
                         BorderThickness="0" Padding="15,8" FontWeight="SemiBold" 
                         Cursor="Hand" Margin="0,0,10,0"/>
-                <Button Content="Close" Click="OnCloseClick"
+                <Button x:Name="CloseButton" Content="Close" Click="OnCloseClick"
                         Background="#666666" Foreground="White" 
                         BorderThickness="0" Padding="15,8" FontWeight="SemiBold" 
                         Cursor="Hand"/>

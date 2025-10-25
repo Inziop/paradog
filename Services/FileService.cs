@@ -12,10 +12,10 @@ public class FileService
     /// <summary>
     /// Get all localization files in a directory
     /// </summary>
-    public static async Task<List<string>> GetLocalizationFilesAsync(string directoryPath)
+    public static Task<List<string>> GetLocalizationFilesAsync(string directoryPath)
     {
         if (!Directory.Exists(directoryPath))
-            return new List<string>();
+            return Task.FromResult(new List<string>());
 
         var files = new List<string>();
         var searchPatterns = new[] { "*.yml", "*.yaml", "*.txt" };
@@ -25,7 +25,7 @@ public class FileService
             files.AddRange(Directory.GetFiles(directoryPath, pattern, SearchOption.AllDirectories));
         }
 
-        return files.OrderBy(f => f).ToList();
+        return Task.FromResult(files.OrderBy(f => f).ToList());
     }
 
     /// <summary>
@@ -46,7 +46,7 @@ public class FileService
     /// <summary>
     /// Create backup of file
     /// </summary>
-    public static async Task<string> CreateBackupAsync(string filePath)
+    public static Task<string> CreateBackupAsync(string filePath)
     {
         var backupDir = Path.Combine(Path.GetDirectoryName(filePath)!, "backup");
         Directory.CreateDirectory(backupDir);
@@ -56,14 +56,32 @@ public class FileService
         var backupPath = Path.Combine(backupDir, $"{timestamp}_{fileName}");
 
         File.Copy(filePath, backupPath);
-        return backupPath;
+        return Task.FromResult(backupPath);
     }
 
     /// <summary>
     /// Save file with UTF-8 encoding
     /// </summary>
-    public static async Task SaveFileAsync(string filePath, string content, bool includeBom = false)
+    public static async Task SaveFileAsync(string filePath, string content, bool includeBom = false, bool createBackup = true)
     {
+        // Create backup if enabled in settings
+        if (createBackup && File.Exists(filePath))
+        {
+            var config = SettingsService.LoadConfig();
+            if (config.CreateBackupBeforeSave)
+            {
+                try
+                {
+                    await CreateBackupAsync(filePath);
+                }
+                catch (Exception ex)
+                {
+                    // Continue even if backup fails, but log the error
+                    LoggingService.Error($"Failed to create backup for {filePath}", ex);
+                }
+            }
+        }
+
         var encoding = includeBom ? new UTF8Encoding(true) : new UTF8Encoding(false);
         await File.WriteAllTextAsync(filePath, content, encoding);
     }

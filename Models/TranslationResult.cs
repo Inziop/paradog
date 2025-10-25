@@ -40,6 +40,29 @@ public class TranslationConfig
     public bool EnableAi { get; set; } = false;
     public string SourceLanguage { get; set; } = "en";
     public string TargetLanguage { get; set; } = "vi";
+    public string AppLanguage { get; set; } = "en"; // en or vi
+
+    // Quality-based timeout calculation
+    public int GetQualityTimeout()
+    {
+        return Quality switch
+        {
+            "Fast" => 15,      // Fast: 15 seconds
+            "High" => 60,      // High Quality: 60 seconds
+            _ => 30            // Balanced: 30 seconds (default)
+        };
+    }
+
+    // Quality-based model selection for Gemini
+    public string GetGeminiModel()
+    {
+        return Quality switch
+        {
+            "Fast" => "gemini-1.5-flash",
+            "High" => "gemini-1.5-pro",
+            _ => "gemini-1.5-flash" // Balanced uses flash
+        };
+    }
 }
 
 /// <summary>

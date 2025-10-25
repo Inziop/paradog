@@ -38,9 +38,10 @@ namespace ParadoxTranslator.Services
                         _memory[kv.Key] = kv.Value;
                 }
             }
-            catch
+            catch (Exception ex)
             {
-                // ignore errors — memory is best-effort
+                // Ignore errors — memory is best-effort, but log for debugging
+                LoggingService.Error("Failed to load translation memory", ex);
             }
         }
 
@@ -52,9 +53,10 @@ namespace ParadoxTranslator.Services
                 var json = JsonSerializer.Serialize(_memory, options);
                 File.WriteAllText(_path, json);
             }
-            catch
+            catch (Exception ex)
             {
-                // ignore save errors for now
+                // Ignore save errors for now, but log for debugging
+                LoggingService.Error("Failed to save translation memory", ex);
             }
         }
 
@@ -68,7 +70,7 @@ namespace ParadoxTranslator.Services
             target = string.Empty;
             if (string.IsNullOrEmpty(source)) return false;
             var key = MakeKey(source, targetLang);
-            return _memory.TryGetValue(key, out target);
+            return _memory.TryGetValue(key, out target!); // ! because we initialize target to empty string above
         }
 
         public void SaveMapping(string source, string targetLang, string translated)
