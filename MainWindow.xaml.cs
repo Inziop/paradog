@@ -1,14 +1,21 @@
+using System;
+using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
+using System.Windows.Threading;
 using TextBox = System.Windows.Controls.TextBox;
 using ParadoxTranslator.ViewModels;
 using ParadoxTranslator.Services;
+using ParadoxTranslator.Controls;
 using System.Threading.Tasks;
 
 namespace ParadoxTranslator
 {
     public partial class MainWindow : Window
     {
+        private DispatcherTimer? _toastDebounceTimer;
+        
         public MainWindow()
         {
             InitializeComponent();
@@ -16,15 +23,166 @@ namespace ParadoxTranslator
 
             Loaded += OnLoadedAsync;
             Closing += OnClosing;
+            
+            // Register keyboard shortcuts
+            RegisterKeyboardShortcuts();
+        }
+
+        public void ShowToast(string title, string message, ToastType type = ToastType.Success)
+        {
+            // Debounce: prevent toasts from showing too frequently
+            if (_toastDebounceTimer != null && _toastDebounceTimer.IsEnabled)
+            {
+                System.Diagnostics.Debug.WriteLine($"Toast debounced: {title}");
+                return; // Ignore if a toast was just shown
+            }
+            
+            // Debug: Log to see if this is being called multiple times
+            System.Diagnostics.Debug.WriteLine($"ShowToast called: {title} - {message}");
+            
+            // Remove any existing toasts first to prevent overlap
+            ToastContainer.Children.Clear();
+            
+            var toast = new ToastNotification();
+            ToastContainer.Children.Add(toast);
+            toast.Show(title, message, type);
+            
+            // Set up debounce timer (prevent new toasts for 5 seconds)
+            _toastDebounceTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(5) };
+            _toastDebounceTimer.Tick += (s, e) =>
+            {
+                _toastDebounceTimer?.Stop();
+                _toastDebounceTimer = null;
+            };
+            _toastDebounceTimer.Start();
+            
+            // Auto-remove from container after hide animation
+            var removeTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(4.5) };
+            removeTimer.Tick += (s, e) =>
+            {
+                removeTimer.Stop();
+                ToastContainer.Children.Remove(toast);
+            };
+            removeTimer.Start();
+        }
+
+        private void RegisterKeyboardShortcuts()
+        {
+            // Ctrl+O: Open files
+            var openCmd = new RoutedCommand();
+            openCmd.InputGestures.Add(new KeyGesture(Key.O, ModifierKeys.Control));
+            CommandBindings.Add(new CommandBinding(openCmd, (s, e) => {
+                if (DataContext is MainViewModel vm) vm.OpenYamlFileCommand.Execute(null);
+            }));
+
+            // Ctrl+E: Export
+            var exportCmd = new RoutedCommand();
+            exportCmd.InputGestures.Add(new KeyGesture(Key.E, ModifierKeys.Control));
+            CommandBindings.Add(new CommandBinding(exportCmd, (s, e) => {
+                if (DataContext is MainViewModel vm) vm.ExportCommand.Execute(null);
+            }));
+
+            // Ctrl+, (Comma): Settings
+            var settingsCmd = new RoutedCommand();
+            settingsCmd.InputGestures.Add(new KeyGesture(Key.OemComma, ModifierKeys.Control));
+            CommandBindings.Add(new CommandBinding(settingsCmd, (s, e) => {
+                if (DataContext is MainViewModel vm) vm.OpenSettingsCommand.Execute(null);
+            }));
+
+            // F5: Refresh (show statistics for now)
+            var refreshCmd = new RoutedCommand();
+            refreshCmd.InputGestures.Add(new KeyGesture(Key.F5));
+            CommandBindings.Add(new CommandBinding(refreshCmd, (s, e) => {
+                if (DataContext is MainViewModel vm) vm.ShowStatisticsCommand.Execute(null);
+            }));
         }
 
         private void OnSearchTextChanged(object sender, TextChangedEventArgs e)
         {
+            if (DataContext is not MainViewModel viewModel) return;
+            
             var textBox = sender as TextBox;
-            if (textBox != null && DataContext is MainViewModel viewModel)
+            var searchText = textBox?.Text?.Trim() ?? string.Empty;
+            
+            // Show/hide clear button
+            if (FindName("ClearSearchButton") is Button clearButton)
             {
-                // TODO: Implement search functionality
-                // This would filter the Files collection based on the search text
+                clearButton.Visibility = string.IsNullOrEmpty(searchText) ? Visibility.Collapsed : Visibility.Visible;
+            }
+            
+            // Get the ListBox
+            var listBox = FindName("FileListBox") as ListBox;
+            if (listBox == null) return;
+            
+            // Apply filter using CollectionViewSource
+            var view = System.Windows.Data.CollectionViewSource.GetDefaultView(viewModel.Files);
+            if (view == null) return;
+            
+            if (string.IsNullOrWhiteSpace(searchText))
+            {
+                view.Filter = null; // Show all
+            }
+            else
+            {
+                view.Filter = obj =>
+                {
+                    if (obj is FileViewModel file)
+                    {
+                        return file.FileName.Contains(searchText, StringComparison.OrdinalIgnoreCase) ||
+                               file.RelativePath.Contains(searchText, StringComparison.OrdinalIgnoreCase);
+                    }
+                    return false;
+                };
+            }
+        }
+
+        private void OnClearSearchClick(object sender, RoutedEventArgs e)
+        {
+            if (DataContext is MainViewModel viewModel)
+            {
+                viewModel.SearchText = string.Empty;
+            }
+        }
+
+        // Context menu handlers
+        private void OnCopyKey(object sender, RoutedEventArgs e)
+        {
+            if (sender is MenuItem menuItem && menuItem.DataContext is LocalizationEntryViewModel entry)
+            {
+                System.Windows.Clipboard.SetText(entry.Key);
+                if (DataContext is MainViewModel vm)
+                    vm.StatusMessage = $"Copied key: {entry.Key}";
+            }
+        }
+
+        private void OnCopySource(object sender, RoutedEventArgs e)
+        {
+            if (sender is MenuItem menuItem && menuItem.DataContext is LocalizationEntryViewModel entry)
+            {
+                System.Windows.Clipboard.SetText(entry.Entry.SourceText);
+                if (DataContext is MainViewModel vm)
+                    vm.StatusMessage = "Copied source text";
+            }
+        }
+
+        private void OnCopyTranslation(object sender, RoutedEventArgs e)
+        {
+            if (sender is MenuItem menuItem && menuItem.DataContext is LocalizationEntryViewModel entry)
+            {
+                System.Windows.Clipboard.SetText(entry.Entry.TranslatedText ?? string.Empty);
+                if (DataContext is MainViewModel vm)
+                    vm.StatusMessage = "Copied translation";
+            }
+        }
+
+        private void OnClearTranslation(object sender, RoutedEventArgs e)
+        {
+            if (sender is MenuItem menuItem && menuItem.DataContext is LocalizationEntryViewModel entry)
+            {
+                entry.Entry.TranslatedText = string.Empty;
+                entry.Status = "Cleared";
+                if (DataContext is MainViewModel vm)
+                    vm.StatusMessage = $"Cleared translation for: {entry.Key}";
             }
         }
 
@@ -32,6 +190,9 @@ namespace ParadoxTranslator
         {
             if (DataContext is MainViewModel vm)
             {
+                // Wire up toast callback
+                vm.ShowToastCallback = (title, message, type) => ShowToast(title, message, (ToastType)type);
+
                 // Restore session
                 ParadoxTranslator.Models.SessionState session = SessionService.Load();
                 await vm.RestoreSessionAsync(session);

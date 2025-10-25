@@ -16,6 +16,7 @@ public class LocalizationEntryViewModel : INotifyPropertyChanged, IDisposable
     private string _target = string.Empty;
     private bool _hasPlaceholderIssues;
     private string _status = string.Empty;
+    private bool _isSelected;
 
     public LocalizationEntryViewModel(LocalizationEntry entry)
     {
@@ -29,6 +30,19 @@ public class LocalizationEntryViewModel : INotifyPropertyChanged, IDisposable
 
     public string Key => _entry.Key;
     public string SourceText => _entry.SourceText;
+
+    public bool IsSelected
+    {
+        get => _isSelected;
+        set
+        {
+            if (_isSelected != value)
+            {
+                _isSelected = value;
+                OnPropertyChanged(nameof(IsSelected));
+            }
+        }
+    }
 
     public string TranslatedText
     {
