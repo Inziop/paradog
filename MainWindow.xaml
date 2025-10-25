@@ -112,20 +112,6 @@
                 </StackPanel>
 
                 <StackPanel Grid.Column="1" Orientation="Horizontal">
-                    <!-- AI Controls -->
-                    <Border Background="#252526" CornerRadius="4" Padding="8,4" Margin="0,0,10,0">
-                        <StackPanel Orientation="Horizontal">
-                            <Border Background="{Binding AiStatusBrush}" CornerRadius="4" Padding="6,4" VerticalAlignment="Center">
-                                <TextBlock Text="{Binding AiStatusText}" Foreground="White" FontWeight="SemiBold"/>
-                            </Border>
-                            <CheckBox Content="Enable AI" IsChecked="{Binding AiEnabled, Mode=TwoWay}" 
-                                    Style="{StaticResource AICheckBoxStyle}"/>
-                            <CheckBox Content="Mock Mode" IsChecked="{Binding MockMode, Mode=TwoWay}" 
-                                    Style="{StaticResource AICheckBoxStyle}"
-                                    ToolTip="Toggle Mock Mode (no API calls)"/>
-                        </StackPanel>
-                    </Border>
-
                     <!-- Language selectors -->
                     <Border Background="#252526" CornerRadius="4" Padding="8,4" Margin="0,0,10,0">
                         <DockPanel>
@@ -163,15 +149,21 @@
                         </DockPanel>
                     </Border>
 
+                    <!-- AI Controls -->
+                    <Border Background="#252526" CornerRadius="4" Padding="8,4" Margin="0,0,10,0">
+                        <StackPanel Orientation="Horizontal">
+                            <Border Background="{Binding AiStatusBrush}" CornerRadius="4" Padding="6,4" VerticalAlignment="Center">
+                                <TextBlock Text="{Binding AiStatusText}" Foreground="White" FontWeight="SemiBold"/>
+                            </Border>
+                            <CheckBox Content="Enable AI" IsChecked="{Binding AiEnabled, Mode=TwoWay}" 
+                                    Style="{StaticResource AICheckBoxStyle}"/>
+                        </StackPanel>
+                    </Border>
+
                     <!-- File Actions -->
-                    <StackPanel Orientation="Horizontal" Margin="0,0,10,0">
-                        <Button Content="📄 Open File" Command="{Binding OpenYamlFileCommand}"
-                                Background="#007ACC" Style="{StaticResource HeaderButtonStyle}"
-                                Margin="0,0,5,0" ToolTip="Open a YAML localization file"/>
-                        <Button Content="📁 Open Folder" Command="{Binding OpenFolderCommand}"
-                                Background="#007ACC" Style="{StaticResource HeaderButtonStyle}"
-                                ToolTip="Open a folder containing localization files"/>
-                    </StackPanel>
+                    <Button Content="� Open File" Command="{Binding OpenYamlFileCommand}"
+                            Background="#007ACC" Style="{StaticResource HeaderButtonStyle}"
+                            Margin="0,0,10,0" ToolTip="Open a YAML localization file"/>
 
                     <!-- Other Actions -->
                     <Button Content="⚙️ Settings" Command="{Binding OpenSettingsCommand}" 
@@ -197,7 +189,7 @@
         <!-- Main Content -->
         <Grid Grid.Row="1" Margin="15">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="250"/>
+                <ColumnDefinition Width="280"/>
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
 
@@ -240,23 +232,48 @@
                              Margin="0,10,0,0">
                         <ListBox.ItemTemplate>
                             <DataTemplate>
-                                <StackPanel Margin="5">
-                                    <TextBlock Text="{Binding FilePath}" 
-                                               Foreground="White" 
-                                               TextTrimming="CharacterEllipsis"/>
-                                    <TextBlock Text="{Binding LastModified, StringFormat='Modified: {0}'}" 
-                                               Foreground="#CCCCCC" 
-                                               FontSize="11"/>
-                                </StackPanel>
+                                <Grid Margin="5">
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+                                    
+                                    <TextBlock Grid.Row="0" 
+                                              Text="{Binding FileName}" 
+                                              Foreground="White" 
+                                              FontWeight="SemiBold"
+                                              TextTrimming="CharacterEllipsis"/>
+                                    
+                                    <TextBlock Grid.Row="1" 
+                                              Text="{Binding RelativePath}" 
+                                              Foreground="#CCCCCC" 
+                                              FontSize="11"
+                                              TextTrimming="CharacterEllipsis"/>
+                                </Grid>
                             </DataTemplate>
                         </ListBox.ItemTemplate>
                         <ListBox.ItemContainerStyle>
                             <Style TargetType="ListBoxItem">
                                 <Setter Property="Background" Value="Transparent"/>
-                                <Setter Property="Padding" Value="10"/>
+                                <Setter Property="Padding" Value="8,6"/>
+                                <Setter Property="Margin" Value="0,2"/>
+                                <Setter Property="BorderThickness" Value="0"/>
+                                <Setter Property="Template">
+                                    <Setter.Value>
+                                        <ControlTemplate TargetType="ListBoxItem">
+                                            <Border Background="{TemplateBinding Background}"
+                                                    BorderBrush="{TemplateBinding BorderBrush}"
+                                                    BorderThickness="{TemplateBinding BorderThickness}"
+                                                    CornerRadius="4">
+                                                <ContentPresenter/>
+                                            </Border>
+                                        </ControlTemplate>
+                                    </Setter.Value>
+                                </Setter>
                                 <Style.Triggers>
                                     <Trigger Property="IsSelected" Value="True">
                                         <Setter Property="Background" Value="#007ACC"/>
+                                        <Setter Property="BorderBrush" Value="#1C97EA"/>
                                     </Trigger>
                                     <Trigger Property="IsMouseOver" Value="True">
                                         <Setter Property="Background" Value="#3E3E42"/>
@@ -278,8 +295,15 @@
                           GridLinesVisibility="Horizontal"
                           Background="Transparent"
                           BorderThickness="0"
+                          ScrollViewer.VerticalScrollBarVisibility="Auto"
+                          ScrollViewer.HorizontalScrollBarVisibility="Auto"
                           RowHeaderWidth="0">
                     <DataGrid.Resources>
+                        <Style TargetType="ScrollBar">
+                            <Setter Property="Background" Value="#2D2D30"/>
+                            <Setter Property="BorderBrush" Value="#3E3E42"/>
+                            <Setter Property="Width" Value="8"/>
+                        </Style>
                         <Style TargetType="DataGridRow">
                             <Setter Property="Background" Value="Transparent"/>
                             <Style.Triggers>

@@ -21,7 +21,7 @@ public class TranslationConfig
 {
     public string GoogleApiKey { get; set; } = string.Empty;
     public string GeminiApiKey { get; set; } = string.Empty;
-    public string GeminiEndpoint { get; set; } = "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent";
+    public string GeminiEndpoint { get; set; } = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent";
     public string DeepLApiKey { get; set; } = string.Empty;
     public string SelectedEngine { get; set; } = "Google";
     public int MaxConcurrentRequests { get; set; } = 5;
@@ -38,8 +38,8 @@ public class TranslationConfig
     public bool EnableLogging { get; set; } = false;
     public bool ShowDebugInfo { get; set; } = false;
     public bool EnableAi { get; set; } = false;
-    // Temporary testing preview mode used by AI translator (default: off)
-    public bool MockMode { get; set; } = false;
+    public string SourceLanguage { get; set; } = "en";
+    public string TargetLanguage { get; set; } = "vi";
 }
 
 /// <summary>

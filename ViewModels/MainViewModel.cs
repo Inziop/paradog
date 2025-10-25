@@ -16,15 +16,16 @@ namespace ParadoxTranslator.ViewModels
     {
         private string _statusMessage = "";
         private FileViewModel? _selectedFile;
-        private bool _mockMode = true;
         private string _aiStatusText = "AI: OFF";
         private bool _aiEnabled;
+        private string _sourceLanguage = "en";
+        private string _targetLanguage = "vi";
         private System.Windows.Media.Brush _aiStatusBrush = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(220, 53, 69)); // Red color for OFF
         public ObservableCollection<FileViewModel> Files { get; } = new();
 
         // Commands
         public RelayCommand OpenYamlFileCommand { get; }
-        public RelayCommand OpenFolderCommand { get; }
+
         public RelayCommand ExportCommand { get; }
         public RelayCommand OpenSettingsCommand { get; }
         public RelayCommand ShowStatisticsCommand { get; }
@@ -35,7 +36,6 @@ namespace ParadoxTranslator.ViewModels
         public MainViewModel()
         {
             OpenYamlFileCommand = new RelayCommand(OpenYamlFile);
-            OpenFolderCommand = new RelayCommand(OpenFolder);
             ExportCommand = new RelayCommand(Export);
             OpenSettingsCommand = new RelayCommand(OpenSettings);
             ShowStatisticsCommand = new RelayCommand(ShowStatistics);
@@ -43,9 +43,11 @@ namespace ParadoxTranslator.ViewModels
             ShowAboutCommand = new RelayCommand(ShowAbout);
             TranslateWithAiCommand = new RelayCommand<LocalizationEntryViewModel>(TranslateWithAi);
 
-            // Initialize AI status
-            MockMode = true; // Start with Mock mode ON by default
-            AiEnabled = false; // Start with AI OFF by default
+            // Load settings
+            var config = Services.SettingsService.LoadConfig();
+            AiEnabled = config.EnableAi;
+            SourceLanguage = config.SourceLanguage;
+            TargetLanguage = config.TargetLanguage;
         }
         
         public string StatusMessage 
@@ -68,15 +70,7 @@ namespace ParadoxTranslator.ViewModels
             }
         }
 
-        public bool MockMode
-        {
-            get => _mockMode;
-            set
-            {
-                _mockMode = value;
-                OnPropertyChanged(nameof(MockMode));
-            }
-        }
+
 
         public bool AiEnabled
         {
@@ -183,58 +177,7 @@ namespace ParadoxTranslator.ViewModels
             }
         }
 
-        private void OpenFolder(object? parameter)
-        {
-            var dialog = new Microsoft.WindowsAPICodePack.Dialogs.CommonOpenFileDialog
-            {
-                Title = "Select Folder with YAML Files",
-                IsFolderPicker = true
-            };
 
-            if (dialog.ShowDialog() == Microsoft.WindowsAPICodePack.Dialogs.CommonFileDialogResult.Ok)
-            {
-                try
-                {
-                    StatusMessage = "Loading files...";
-                    Files.Clear();
-
-                    var yamlFiles = Directory.GetFiles(dialog.FileName, "*.yml", SearchOption.AllDirectories)
-                                           .Concat(Directory.GetFiles(dialog.FileName, "*.yaml", SearchOption.AllDirectories));
-
-                    foreach (var filePath in yamlFiles)
-                    {
-                        var entries = ParadoxParser.ParseFileAsync(filePath).Result;
-                        var entryViewModels = entries.Select(e => new LocalizationEntryViewModel(e)).ToList();
-                        
-                        var fileViewModel = new FileViewModel
-                        {
-                            FilePath = filePath,
-                            LastModified = FileService.GetFileModifiedTime(filePath),
-                            Entries = new ObservableCollection<LocalizationEntryViewModel>(entryViewModels)
-                        };
-                        
-                        Files.Add(fileViewModel);
-                    }
-
-                    if (Files.Count > 0)
-                    {
-                        SelectedFile = Files[0];
-                        StatusMessage = "Files loaded successfully";
-                    }
-                    else
-                    {
-                        StatusMessage = "No YAML files found in selected folder";
-                    }
-                    UpdateProgressText();
-                }
-                catch (Exception ex)
-                {
-                    StatusMessage = $"Error loading files: {ex.Message}";
-                    MessageBox.Show($"Error loading files:\n{ex.Message}", "Error", 
-                                   MessageBoxButton.OK, MessageBoxImage.Error);
-                }
-            }
-        }
 
         private void Export(object? parameter)
         {
@@ -321,6 +264,40 @@ namespace ParadoxTranslator.ViewModels
             }
         }
 
+        public string SourceLanguage
+        {
+            get => _sourceLanguage;
+            set
+            {
+                if (_sourceLanguage != value)
+                {
+                    _sourceLanguage = value;
+                    OnPropertyChanged(nameof(SourceLanguage));
+
+                    var config = Services.SettingsService.LoadConfig();
+                    config.SourceLanguage = value;
+                    Services.SettingsService.SaveConfig(config);
+                }
+            }
+        }
+
+        public string TargetLanguage
+        {
+            get => _targetLanguage;
+            set
+            {
+                if (_targetLanguage != value)
+                {
+                    _targetLanguage = value;
+                    OnPropertyChanged(nameof(TargetLanguage));
+
+                    var config = Services.SettingsService.LoadConfig();
+                    config.TargetLanguage = value;
+                    Services.SettingsService.SaveConfig(config);
+                }
+            }
+        }
+
         private async void TranslateWithAi(LocalizationEntryViewModel? entry)
         {
             if (entry == null || !AiEnabled) return;
@@ -330,19 +307,20 @@ namespace ParadoxTranslator.ViewModels
                 StatusMessage = "Translating with AI...";
                 entry.Status = "Translating...";
 
-                if (MockMode)
+                var config = Services.SettingsService.LoadConfig();
+                config.SourceLanguage = SourceLanguage;
+                config.TargetLanguage = TargetLanguage;
+
+                var translationService = new TranslationService(config);
+                var result = await translationService.TranslateTextAsync(entry.Entry.SourceText, SourceLanguage, TargetLanguage);
+                if (result.Success)
                 {
-                    // Simulate translation delay
-                    await Task.Delay(1000);
-                    entry.Entry.TranslatedText = $"[AI Mock] {entry.Entry.SourceText}";
-                    entry.Status = "Mock translated";
+                    entry.Entry.TranslatedText = result.TranslatedText;
+                    entry.Status = $"Translated with {result.Engine}";
                 }
                 else
                 {
-                    // TODO: Implement real AI translation here
-                    await Task.Delay(2000); // Temporary delay
-                    entry.Entry.TranslatedText = $"[AI] {entry.Entry.SourceText}";
-                    entry.Status = "AI translated";
+                    entry.Status = $"Translation failed: {result.ErrorMessage}";
                 }
 
                 StatusMessage = "Translation completed";

@@ -34,6 +34,34 @@ public partial class SettingsWindow : Window, IDisposable
         MessageBox.Show("Google API key is set. To fully validate the key, save settings and try translating an entry.", "Test API Key", MessageBoxButton.OK, MessageBoxImage.Information);
     }
 
+    private void OnGetGoogleKeyClick(object sender, RoutedEventArgs e)
+    {
+        var message = @"To get a Google Cloud Translation API key:
+
+1. Go to Google Cloud Console (https://console.cloud.google.com)
+2. Create a new project or select an existing one
+3. Enable the Cloud Translation API:
+   - Go to APIs & Services > Library
+   - Search for 'Cloud Translation API'
+   - Click Enable
+4. Create credentials:
+   - Go to APIs & Services > Credentials
+   - Click Create Credentials > API Key
+   - Copy the generated API key
+
+Would you like to open the Google Cloud Console?";
+
+        var result = MessageBox.Show(message, "Get Google API Key", MessageBoxButton.YesNo, MessageBoxImage.Information);
+        if (result == MessageBoxResult.Yes)
+        {
+            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+            {
+                FileName = "https://console.cloud.google.com",
+                UseShellExecute = true
+            });
+        }
+    }
+
     private void OnTestDeepLClick(object sender, RoutedEventArgs e)
     {
         var key = DeepLApiKeyTextBox.Text?.Trim() ?? string.Empty;
@@ -168,14 +196,39 @@ public partial class SettingsWindow : Window, IDisposable
 
             var json = JsonSerializer.Serialize(requestBody);
             var content = new StringContent(json, Encoding.UTF8, "application/json");
-            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", key);
+            
+            _httpClient.DefaultRequestHeaders.Clear();
+            _httpClient.DefaultRequestHeaders.Add("x-goog-api-key", key);
 
             using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
             var response = await _httpClient.PostAsync(endpoint, content, cts.Token);
-            response.EnsureSuccessStatusCode();
 
-            MessageBox.Show("Successfully connected to Google AI Studio (Gemini)! The API key and endpoint are valid.", 
-                          "API Test Success", MessageBoxButton.OK, MessageBoxImage.Information);
+            var body = await response.Content.ReadAsStringAsync(cts.Token);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                // Throw a more informative exception
+                throw new HttpRequestException($"Response status code does not indicate success: {(int)response.StatusCode} ({response.StatusCode}). Body: {body}");
+            }
+
+            // Validate the response shape to avoid false positives (e.g., hitting a web page)
+            try
+            {
+                var jsonEl = JsonSerializer.Deserialize<JsonElement>(body);
+                if (jsonEl.TryGetProperty("candidates", out var candidates) && candidates.ValueKind == JsonValueKind.Array && candidates.GetArrayLength() > 0)
+                {
+                    MessageBox.Show("Successfully connected to Google AI Studio (Gemini)! The API key and endpoint are valid.",
+                                  "API Test Success", MessageBoxButton.OK, MessageBoxImage.Information);
+                }
+                else
+                {
+                    throw new Exception($"Unexpected response from endpoint. Body: {Truncate(body, 500)}");
+                }
+            }
+            catch (JsonException)
+            {
+                throw new Exception($"Endpoint did not return JSON as expected. Body: {Truncate(body, 500)}");
+            }
         }
         catch (Exception ex)
         {
@@ -191,7 +244,7 @@ public partial class SettingsWindow : Window, IDisposable
         GoogleApiKeyTextBox.Text = "";
         DeepLApiKeyTextBox.Text = "";
         GeminiApiKeyTextBox.Text = "";
-        GeminiEndpointTextBox.Text = "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent";
+    GeminiEndpointTextBox.Text = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent";
         OverwriteExistingCheckBox.IsChecked = true;
         ValidatePlaceholdersCheckBox.IsChecked = true;
         CreateBackupCheckBox.IsChecked = true;
@@ -207,5 +260,12 @@ public partial class SettingsWindow : Window, IDisposable
     public void Dispose()
     {
         try { _httpClient?.Dispose(); } catch { }
+    }
+
+    // Helper to keep error messages readable
+    private static string Truncate(string value, int max)
+    {
+        if (string.IsNullOrEmpty(value)) return value;
+        return value.Length <= max ? value : value.Substring(0, max) + "...";
     }
 }

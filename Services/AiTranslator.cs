@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
@@ -24,14 +25,12 @@ public class AiTranslator : ITranslator
     {
         var engine = (config.SelectedEngine ?? string.Empty).ToLowerInvariant();
 
-        // Support explicit Mock mode for preview/testing
-        if (config.MockMode)
-            return MockTranslate(text, sourceLang, targetLang);
+
 
         // Fall back to no-op if AI disabled or engine not set
-        if (!config.EnableAi) return text;
+        if (!config.EnableAi) throw new InvalidOperationException("AI translation is disabled");
 
-        // small retry/backoff loop to improve reliability
+        // small retry/backoff loop to improve reliability 
         var attempts = 0;
         var maxAttempts = 3;
         var backoffMs = 500;
@@ -49,30 +48,35 @@ public class AiTranslator : ITranslator
                 {
                     case "google":
                         if (string.IsNullOrWhiteSpace(config.GoogleApiKey))
-                            return text;
+                            throw new InvalidOperationException("Google API key is not configured");
                         return await TranslateWithGoogleAsync(text, sourceLang, targetLang, config.GoogleApiKey, cts.Token);
                     case "deepl":
                         if (string.IsNullOrWhiteSpace(config.DeepLApiKey))
-                            return text;
+                            throw new InvalidOperationException("DeepL API key is not configured");
                         return await TranslateWithDeepLAsync(text, sourceLang, targetLang, config.DeepLApiKey, cts.Token);
                     case "gemini":
                     case "openai":
                     case "openai-gemini":
                         if (string.IsNullOrWhiteSpace(config.GeminiApiKey))
-                            return text;
+                            throw new InvalidOperationException("Gemini API key is not configured");
                         return await TranslateWithGeminiAsync(text, sourceLang, targetLang, config.GeminiApiKey, config.GeminiEndpoint, cts.Token);
                     default:
-                        return text;
+                        throw new InvalidOperationException($"Unsupported translation engine: {engine}");
                 }
             }
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
             {
                 throw; // propagate user cancellation
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                Debug.WriteLine($"[AiTranslator] Translation attempt {attempts} failed. Error: {ex}");
+
                 if (attempts >= maxAttempts)
-                    return text; // give up and return original
+                {
+                    Debug.WriteLine($"[AiTranslator] Max attempts reached. Giving up and returning original text.");
+                    throw new Exception("AI translation failed after multiple attempts. Please check your configuration and network.", ex);
+                }
 
                 // backoff then retry
                 await Task.Delay(backoffMs, cancellationToken);
@@ -97,25 +101,50 @@ public class AiTranslator : ITranslator
         _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
 
         var response = await _httpClient.PostAsync("https://translation.googleapis.com/language/translate/v2", content, cancellationToken);
-        response.EnsureSuccessStatusCode();
-
+        
         var responseJson = await response.Content.ReadAsStringAsync(cancellationToken);
+        Debug.WriteLine($"[AiTranslator] Google Raw Response: {responseJson}");
+
+        if (!response.IsSuccessStatusCode)
+        {
+            throw new HttpRequestException($"Google Translate API request failed with status code {response.StatusCode}. Response: {responseJson}");
+        }
+
         var responseObj = JsonSerializer.Deserialize<JsonElement>(responseJson);
 
-        return responseObj.GetProperty("data").GetProperty("translations")[0].GetProperty("translatedText").GetString() ?? text;
+        if (responseObj.TryGetProperty("data", out var data) &&
+            data.TryGetProperty("translations", out var translations) &&
+            translations.GetArrayLength() > 0 &&
+            translations[0].TryGetProperty("translatedText", out var translatedText))
+        {
+            return translatedText.GetString() ?? string.Empty;
+        }
+
+        throw new JsonException("Failed to parse translated text from Google Translate API response.");
     }
 
     private async Task<string> TranslateWithGeminiAsync(string text, string sourceLang, string targetLang, string apiKey, string endpoint, CancellationToken cancellationToken)
     {
         // Enhanced prompt for more natural and accurate translations
-        var prompt = $@"You are an expert translator for games and software. Translate the following text from {sourceLang} to {targetLang}.
+        var rules = targetLang.ToLower() == "vi"
+            ? $@"Bạn là chuyên gia dịch thuật game và phần mềm. Hãy dịch đoạn văn sau từ {sourceLang} sang {targetLang}.
+
+Quy tắc:
+1. Dịch tự nhiên nhưng phải giữ đúng ý nghĩa
+2. Giữ nguyên TẤT CẢ các placeholder (ví dụ: {{{{0}}}}, %d, [Root.GetName], $VAR$)
+3. Giữ đúng thứ tự và kiểu chữ (hoa/thường) của placeholder
+4. CHỈ trả về bản dịch, không thêm nội dung khác
+5. KHÔNG copy nguyên văn nếu không chắc chắn - trả về 'TRANSLATION_ERROR'"
+            : $@"You are an expert translator for games and software. Translate the following text from {sourceLang} to {targetLang}.
 
 Rules:
 1. Translate naturally while preserving the exact meaning
-2. Keep ALL placeholders unchanged (examples: {{0}}, %d, [Root.GetName], $VAR$)
+2. Keep ALL placeholders unchanged (examples: {{{{0}}}}, %d, [Root.GetName], $VAR$)
 3. Maintain placeholder order and casing
 4. ONLY output the translated text, nothing else
-5. DO NOT copy the source text if unsure - respond with 'TRANSLATION_ERROR' instead
+5. DO NOT copy the source text if unsure - respond with 'TRANSLATION_ERROR' instead";
+
+        var prompt = $@"{rules}
 
 Text to translate:
 {text}
@@ -141,12 +170,19 @@ Your translation:";
         var json = JsonSerializer.Serialize(requestBody);
         var content = new StringContent(json, Encoding.UTF8, "application/json");
 
-        _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
+        _httpClient.DefaultRequestHeaders.Clear();
+        _httpClient.DefaultRequestHeaders.Add("x-goog-api-key", apiKey);
 
         var response = await _httpClient.PostAsync(endpoint, content, cancellationToken);
-        response.EnsureSuccessStatusCode();
-
+        
         var responseJson = await response.Content.ReadAsStringAsync(cancellationToken);
+        Debug.WriteLine($"[AiTranslator] Gemini Raw Response: {responseJson}");
+
+        if (!response.IsSuccessStatusCode)
+        {
+            throw new HttpRequestException($"Gemini API request failed with status code {response.StatusCode}. Response: {responseJson}");
+        }
+        
         var responseObj = JsonSerializer.Deserialize<JsonElement>(responseJson);
 
         // Support both Gemini and generic OpenAI-like shapes if possible
@@ -155,7 +191,12 @@ Your translation:";
             var contentEl = candidates[0].GetProperty("content");
             if (contentEl.TryGetProperty("parts", out var parts) && parts.GetArrayLength() > 0)
             {
-                return parts[0].GetProperty("text").GetString() ?? text;
+                var result = parts[0].GetProperty("text").GetString() ?? string.Empty;
+                if (result.Trim().Equals("TRANSLATION_ERROR", StringComparison.OrdinalIgnoreCase))
+                {
+                    throw new Exception("Gemini returned TRANSLATION_ERROR, indicating it could not translate the text.");
+                }
+                return result;
             }
         }
 
@@ -164,18 +205,14 @@ Your translation:";
         {
             var first = choices[0];
             if (first.TryGetProperty("text", out var t))
-                return t.GetString() ?? text;
+                return t.GetString() ?? string.Empty;
         }
 
-        return text;
+        Debug.WriteLine($"[AiTranslator] Failed to parse Gemini response. Returning original text.");
+        throw new JsonException("Failed to parse translated text from Gemini API response.");
     }
 
-    private string MockTranslate(string text, string sourceLang, string targetLang)
-    {
-        // Simple, deterministic mock transformation for preview: wrap lines and mark as MOCK
-        if (string.IsNullOrEmpty(text)) return text;
-        return $"[MOCK {targetLang}] " + text;
-    }
+
 
     private async Task<string> TranslateWithDeepLAsync(string text, string sourceLang, string targetLang, string apiKey, CancellationToken cancellationToken)
     {
@@ -190,12 +227,25 @@ Your translation:";
         _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("DeepL-Auth-Key", apiKey);
 
         var response = await _httpClient.PostAsync("https://api-free.deepl.com/v2/translate", content, cancellationToken);
-        response.EnsureSuccessStatusCode();
-
+        
         var responseJson = await response.Content.ReadAsStringAsync(cancellationToken);
+        Debug.WriteLine($"[AiTranslator] DeepL Raw Response: {responseJson}");
+
+        if (!response.IsSuccessStatusCode)
+        {
+            throw new HttpRequestException($"DeepL API request failed with status code {response.StatusCode}. Response: {responseJson}");
+        }
+
         var responseObj = JsonSerializer.Deserialize<JsonElement>(responseJson);
 
-        return responseObj.GetProperty("translations")[0].GetProperty("text").GetString() ?? text;
+        if (responseObj.TryGetProperty("translations", out var translations) &&
+            translations.GetArrayLength() > 0 &&
+            translations[0].TryGetProperty("text", out var translatedText))
+        {
+            return translatedText.GetString() ?? string.Empty;
+        }
+        
+        throw new JsonException("Failed to parse translated text from DeepL API response.");
     }
 
     public void Dispose()
