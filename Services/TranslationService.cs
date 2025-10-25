@@ -73,16 +73,16 @@ public class TranslationService : IDisposable
         {
             if (cancellationToken.IsCancellationRequested) break;
 
-            if (!string.IsNullOrWhiteSpace(entry.Target) && !_config.OverwriteExistingTranslations)
+            if (!string.IsNullOrWhiteSpace(entry.TranslatedText) && !_config.OverwriteExistingTranslations)
             {
-                results.Add(new TranslationResult { Success = true, TranslatedText = entry.Target });
+                results.Add(new TranslationResult { Success = true, TranslatedText = entry.TranslatedText });
                 completed++;
                 progress?.Report(completed * 100 / Math.Max(1, total));
                 continue;
             }
 
-            var res = await TranslateTextAsync(entry.Source, sourceLang, targetLang, cancellationToken).ConfigureAwait(false);
-            if (res.Success) entry.Target = res.TranslatedText;
+            var res = await TranslateTextAsync(entry.SourceText, sourceLang, targetLang, cancellationToken).ConfigureAwait(false);
+            if (res.Success) entry.TranslatedText = res.TranslatedText;
             results.Add(res);
 
             completed++;

@@ -13,6 +13,7 @@ public class FileViewModel : INotifyPropertyChanged, IDisposable
 {
     private string _filePath = string.Empty;
     private string _fileName = string.Empty;
+    private string _relativePath = string.Empty;
     private int _totalEntries;
     private int _translatedEntries;
     private bool _isSelected;
@@ -26,7 +27,21 @@ public class FileViewModel : INotifyPropertyChanged, IDisposable
         {
             _filePath = value;
             FileName = Path.GetFileName(value);
+            
+            // Get directory name and make it relative to current directory
+            var currentDir = Directory.GetCurrentDirectory();
+            var dir = Path.GetDirectoryName(value) ?? string.Empty;
+            if (dir.StartsWith(currentDir))
+            {
+                RelativePath = dir[currentDir.Length..].TrimStart(Path.DirectorySeparatorChar);
+            }
+            else
+            {
+                RelativePath = dir;
+            }
+            
             OnPropertyChanged(nameof(FilePath));
+            OnPropertyChanged(nameof(RelativePath));
         }
     }
 
@@ -81,6 +96,16 @@ public class FileViewModel : INotifyPropertyChanged, IDisposable
         {
             _lastModified = value;
             OnPropertyChanged(nameof(LastModified));
+        }
+    }
+
+    public string RelativePath
+    {
+        get => _relativePath;
+        set
+        {
+            _relativePath = value;
+            OnPropertyChanged(nameof(RelativePath));
         }
     }
 
