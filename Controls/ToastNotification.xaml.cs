@@ -19,7 +19,7 @@ namespace ParadoxTranslator.Controls
             
             _autoCloseTimer = new DispatcherTimer
             {
-                Interval = TimeSpan.FromSeconds(4)
+                Interval = TimeSpan.FromSeconds(6)
             };
             _autoCloseTimer.Tick += (s, e) => Hide();
             

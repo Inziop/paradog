@@ -42,4 +42,28 @@ public partial class StatisticsWindow : Window
         _timer?.Stop();
         base.OnClosed(e);
     }
+
+    private void OnMinimize(object sender, RoutedEventArgs e)
+    {
+        WindowState = WindowState.Minimized;
+    }
+
+    private void OnMaximize(object sender, RoutedEventArgs e)
+    {
+        if (WindowState == WindowState.Maximized)
+        {
+            WindowState = WindowState.Normal;
+            MaximizeButton.Content = "□";
+        }
+        else
+        {
+            WindowState = WindowState.Maximized;
+            MaximizeButton.Content = "❐";
+        }
+    }
+
+    private void OnWindowClose(object sender, RoutedEventArgs e)
+    {
+        Close();
+    }
 }

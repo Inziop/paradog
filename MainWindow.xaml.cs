@@ -8,6 +8,7 @@ using TextBox = System.Windows.Controls.TextBox;
 using ParadoxTranslator.ViewModels;
 using ParadoxTranslator.Services;
 using ParadoxTranslator.Controls;
+using ParadoxTranslator.Models;
 using System.Threading.Tasks;
 
 namespace ParadoxTranslator
@@ -15,17 +16,46 @@ namespace ParadoxTranslator
     public partial class MainWindow : Window
     {
         private DispatcherTimer? _toastDebounceTimer;
+        private Project _currentProject;
         
-        public MainWindow()
+        public MainWindow(Project project)
         {
             InitializeComponent();
-            DataContext = new MainViewModel();
+            _currentProject = project;
+            
+            var viewModel = new MainViewModel();
+            DataContext = viewModel;
+
+            // Set project languages
+            viewModel.SourceLanguage = project.SourceLanguage;
+            viewModel.TargetLanguage = project.TargetLanguage;
+
+            // Update project name in header
+            ProjectNameTextBlock.Text = project.Name;
 
             Loaded += OnLoadedAsync;
             Closing += OnClosing;
             
             // Register keyboard shortcuts
             RegisterKeyboardShortcuts();
+        }
+
+        private void OnMinimize(object sender, RoutedEventArgs e)
+        {
+            WindowState = WindowState.Minimized;
+        }
+
+        private void OnMaximize(object sender, RoutedEventArgs e)
+        {
+            WindowState = WindowState == WindowState.Maximized ? WindowState.Normal : WindowState.Maximized;
+            
+            // Update maximize button icon
+            MaximizeButton.Content = WindowState == WindowState.Maximized ? "❐" : "□";
+        }
+
+        private void OnCloseWindow(object sender, RoutedEventArgs e)
+        {
+            Close();
         }
 
         public void ShowToast(string title, string message, ToastType type = ToastType.Success)
@@ -144,6 +174,93 @@ namespace ParadoxTranslator
             }
         }
 
+        private async void OnSwitchProject(object sender, RoutedEventArgs e)
+        {
+            var result = MessageBox.Show(
+                "Do you want to switch to another project? Any unsaved changes will be saved.",
+                "Switch Project",
+                MessageBoxButton.YesNo,
+                MessageBoxImage.Question);
+
+            if (result == MessageBoxResult.Yes)
+            {
+                // Save current work
+                if (DataContext is MainViewModel vm)
+                {
+                    var snapshot = vm.BuildSessionSnapshot();
+                    SessionService.Save(snapshot);
+                    
+                    // Update current project with file list
+                    _currentProject.FilePaths = vm.Files.Select(f => f.FilePath).ToList();
+                    ProjectService.SaveProject(_currentProject);
+                }
+
+                // Show project selection window
+                var projectSelection = new ProjectSelectionWindow();
+                projectSelection.Owner = this;
+                projectSelection.WindowStartupLocation = WindowStartupLocation.CenterOwner;
+                
+                if (projectSelection.ShowDialog() == true && projectSelection.SelectedProject != null)
+                {
+                    // Reload current window with new project
+                    await LoadProject(projectSelection.SelectedProject);
+                    
+                    // Make sure main window stays focused
+                    this.Activate();
+                    this.Focus();
+                }
+            }
+        }
+
+        private async Task LoadProject(Project project)
+        {
+            _currentProject = project;
+            
+            // Update UI
+            ProjectNameTextBlock.Text = project.Name;
+            
+            // Create new ViewModel
+            var viewModel = new MainViewModel();
+            viewModel.SourceLanguage = project.SourceLanguage;
+            viewModel.TargetLanguage = project.TargetLanguage;
+            viewModel.ShowToastCallback = (title, message, type) => ShowToast(title, message, (ToastType)type);
+            
+            DataContext = viewModel;
+            
+            // Load project files
+            if (project.FilePaths != null && project.FilePaths.Count > 0)
+            {
+                foreach (var filePath in project.FilePaths)
+                {
+                    if (System.IO.File.Exists(filePath))
+                    {
+                        await viewModel.LoadFileAsync(filePath);
+                    }
+                }
+                
+                // Restore translations from session
+                ParadoxTranslator.Models.SessionState session = SessionService.Load();
+                if (session.Translations != null)
+                {
+                    foreach (var file in viewModel.Files)
+                    {
+                        if (session.Translations.TryGetValue(file.FilePath, out var translations))
+                        {
+                            foreach (var entry in file.Entries)
+                            {
+                                if (translations.TryGetValue(entry.Entry.Key, out var translatedText))
+                                {
+                                    entry.Entry.TranslatedText = translatedText;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            
+            ShowToast("Project Loaded", $"Switched to project: {project.Name}", ToastType.Success);
+        }
+
         // Context menu handlers
         private void OnCopyKey(object sender, RoutedEventArgs e)
         {
@@ -193,28 +310,61 @@ namespace ParadoxTranslator
                 // Wire up toast callback
                 vm.ShowToastCallback = (title, message, type) => ShowToast(title, message, (ToastType)type);
 
-                // Restore session
-                ParadoxTranslator.Models.SessionState session = SessionService.Load();
-                await vm.RestoreSessionAsync(session);
+                // Load files from current project
+                if (_currentProject.FilePaths != null && _currentProject.FilePaths.Count > 0)
+                {
+                    foreach (var filePath in _currentProject.FilePaths)
+                    {
+                        if (System.IO.File.Exists(filePath))
+                        {
+                            await vm.LoadFileAsync(filePath);
+                        }
+                    }
+                    
+                    // Try to restore translations from session for this project
+                    ParadoxTranslator.Models.SessionState session = SessionService.Load();
+                    // Only restore translations, not file list
+                    if (session.Translations != null)
+                    {
+                        foreach (var file in vm.Files)
+                        {
+                            if (session.Translations.TryGetValue(file.FilePath, out var translations))
+                            {
+                                foreach (var entry in file.Entries)
+                                {
+                                    if (translations.TryGetValue(entry.Entry.Key, out var translatedText))
+                                    {
+                                        entry.Entry.TranslatedText = translatedText;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
 
-                // Restore window placement if available
-                if (session.Width.HasValue && session.Height.HasValue)
+                // Restore window placement
+                var session2 = SessionService.Load();
+                if (session2.Width.HasValue && session2.Height.HasValue)
                 {
-                    this.Width = session.Width.Value;
-                    this.Height = session.Height.Value;
+                    this.Width = session2.Width.Value;
+                    this.Height = session2.Height.Value;
                 }
-                if (session.Left.HasValue && session.Top.HasValue)
+                if (session2.Left.HasValue && session2.Top.HasValue)
                 {
-                    this.Left = session.Left.Value;
-                    this.Top = session.Top.Value;
+                    this.Left = session2.Left.Value;
+                    this.Top = session2.Top.Value;
                 }
-                if (!string.IsNullOrWhiteSpace(session.WindowState))
+                if (!string.IsNullOrWhiteSpace(session2.WindowState))
                 {
-                    if (System.Enum.TryParse<WindowState>(session.WindowState, out var state))
+                    if (System.Enum.TryParse<WindowState>(session2.WindowState, out var state))
                     {
                         this.WindowState = state;
                     }
                 }
+                
+                // Bring window to front
+                this.Activate();
+                this.Focus();
             }
         }
 
@@ -230,6 +380,10 @@ namespace ParadoxTranslator
                 snapshot.Left = this.Left;
                 snapshot.Top = this.Top;
                 SessionService.Save(snapshot);
+                
+                // Update project with current file list
+                _currentProject.FilePaths = vm.Files.Select(f => f.FilePath).ToList();
+                ProjectService.SaveProject(_currentProject);
             }
         }
     }

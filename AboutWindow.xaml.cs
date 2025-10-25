@@ -35,4 +35,9 @@ public partial class AboutWindow : Window
     {
         Close();
     }
+
+    private void OnWindowClose(object sender, RoutedEventArgs e)
+    {
+        Close();
+    }
 }
