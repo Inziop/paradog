@@ -133,6 +133,8 @@ Would you like to open the Google Cloud Console?";
         QualityComboBox.SelectedIndex = cfg.Quality == "Fast" ? 0 : cfg.Quality == "High" ? 2 : 1;
         EnableLoggingCheckBox.IsChecked = cfg.EnableLogging;
         ShowDebugInfoCheckBox.IsChecked = cfg.ShowDebugInfo;
+        MemoryLimitSlider.Value = Math.Clamp(cfg.TranslationMemoryLimit, 20000, 1500000);
+        UpdateMemoryLimitText(MemoryLimitSlider.Value);
     }
 
     private void SaveSettings()
@@ -167,6 +169,7 @@ Would you like to open the Google Cloud Console?";
         cfg.Quality = (QualityComboBox.SelectedItem as ComboBoxItem)?.Tag?.ToString() ?? cfg.Quality;
         cfg.EnableLogging = EnableLoggingCheckBox.IsChecked == true;
         cfg.ShowDebugInfo = ShowDebugInfoCheckBox.IsChecked == true;
+        cfg.TranslationMemoryLimit = (int)MemoryLimitSlider.Value;
 
         // Validate API key when AI is enabled
         if (cfg.EnableAi)
@@ -191,6 +194,9 @@ Would you like to open the Google Cloud Console?";
         // Apply language change immediately
         var config = Services.SettingsService.LoadConfig();
         Services.LocalizationService.Instance.SaveLanguage(config.AppLanguage);
+        
+        // Reload translation memory config and enforce new limit if needed
+        Services.TranslationMemoryService.Instance.ReloadConfig();
         
         DialogResult = true;
         Close();
@@ -287,6 +293,8 @@ Would you like to open the Google Cloud Console?";
         QualityComboBox.SelectedIndex = 1;
         EnableLoggingCheckBox.IsChecked = false;
         ShowDebugInfoCheckBox.IsChecked = false;
+        MemoryLimitSlider.Value = 100000;
+        UpdateMemoryLimitText(100000);
     }
 
     public void Dispose()
@@ -299,6 +307,19 @@ Would you like to open the Google Cloud Console?";
     {
         if (string.IsNullOrEmpty(value)) return value;
         return value.Length <= max ? value : value.Substring(0, max) + "...";
+    }
+
+    private void OnMemoryLimitChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+    {
+        UpdateMemoryLimitText(e.NewValue);
+    }
+
+    private void UpdateMemoryLimitText(double value)
+    {
+        if (MemoryLimitValueText != null)
+        {
+            MemoryLimitValueText.Text = $"{value:N0}";
+        }
     }
 
     private void OnMinimize(object sender, RoutedEventArgs e)
