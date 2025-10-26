@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Windows;
+using MessageBox = ParadoxTranslator.Utils.ModernMessageBox;
 
 namespace ParadoxTranslator;
 

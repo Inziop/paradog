@@ -8,7 +8,7 @@ using ParadoxTranslator.Models;
 using ParadoxTranslator.Services;
 using ParadoxTranslator.Utils;
 using System.IO;
-using MessageBox = System.Windows.MessageBox;
+using MessageBox = ParadoxTranslator.Utils.ModernMessageBox;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
@@ -57,11 +57,11 @@ namespace ParadoxTranslator.ViewModels
         public RelayCommand ShowStatisticsCommand { get; }
         public RelayCommand ShowWelcomeCommand { get; }
         public RelayCommand ShowAboutCommand { get; }
-        public RelayCommand<LocalizationEntryViewModel> TranslateWithAiCommand { get; }
         public RelayCommand<LocalizationEntryViewModel> CopySourceToTranslationCommand { get; }
-        public RelayCommand BatchTranslateCommand { get; }
+        public RelayCommand<LocalizationEntryViewModel> BatchTranslateCommand { get; }
         public RelayCommand SelectAllCommand { get; }
         public RelayCommand DeselectAllCommand { get; }
+        public RelayCommand CompareWithNewVersionCommand { get; }
 
         public MainViewModel()
         {
@@ -71,11 +71,11 @@ namespace ParadoxTranslator.ViewModels
             ShowStatisticsCommand = new RelayCommand(ShowStatistics);
             ShowWelcomeCommand = new RelayCommand(ShowWelcome);
             ShowAboutCommand = new RelayCommand(ShowAbout);
-            TranslateWithAiCommand = new RelayCommand<LocalizationEntryViewModel>(TranslateWithAi);
             CopySourceToTranslationCommand = new RelayCommand<LocalizationEntryViewModel>(CopySourceToTranslation);
-            BatchTranslateCommand = new RelayCommand(BatchTranslate);
+            BatchTranslateCommand = new RelayCommand<LocalizationEntryViewModel>(BatchTranslate);
             SelectAllCommand = new RelayCommand(SelectAll);
             DeselectAllCommand = new RelayCommand(DeselectAll);
+            CompareWithNewVersionCommand = new RelayCommand(CompareWithNewVersion);
 
             // Load settings
             var config = Services.SettingsService.LoadConfig();
@@ -560,7 +560,8 @@ namespace ParadoxTranslator.ViewModels
                 var settingsWindow = new SettingsWindow
                 {
                     Owner = Application.Current.MainWindow,
-                    WindowStartupLocation = WindowStartupLocation.CenterOwner
+                    WindowStartupLocation = WindowStartupLocation.CenterOwner,
+                    ShowToastCallback = ShowToastCallback // Pass toast callback
                 };
                 settingsWindow.ShowDialog();
                 
@@ -756,44 +757,6 @@ namespace ParadoxTranslator.ViewModels
 
         private readonly Dictionary<string, List<LocalizationEntryViewModel>> _originalEntries = new();
 
-        private async void TranslateWithAi(LocalizationEntryViewModel? entry)
-        {
-            if (entry == null || !AiEnabled) return;
-
-            try
-            {
-                StatusMessage = "Translating with AI...";
-                entry.Status = "Translating...";
-
-                var config = Services.SettingsService.LoadConfig();
-                config.SourceLanguage = SourceLanguage;
-                config.TargetLanguage = TargetLanguage;
-
-                var translationService = new TranslationService(config);
-                var result = await translationService.TranslateTextAsync(entry.Entry.SourceText, SourceLanguage, TargetLanguage);
-                if (result.Success)
-                {
-                    entry.Entry.TranslatedText = result.TranslatedText;
-                    entry.Status = $"Translated with {result.Engine}";
-                    // Persist progress
-                    await SaveAllAsync();
-                }
-                else
-                {
-                    entry.Status = $"Translation failed: {result.ErrorMessage}";
-                }
-
-                StatusMessage = "Translation completed";
-            }
-            catch (Exception ex)
-            {
-                entry.Status = "Translation failed";
-                StatusMessage = $"Translation error: {ex.Message}";
-                MessageBox.Show($"Error during translation:\n{ex.Message}", "Translation Error",
-                               MessageBoxButton.OK, MessageBoxImage.Error);
-            }
-        }
-
         private void CopySourceToTranslation(LocalizationEntryViewModel? entry)
         {
             if (entry == null) return;
@@ -826,33 +789,89 @@ namespace ParadoxTranslator.ViewModels
         {
             if (SelectedFile?.Entries == null || !AiEnabled)
             {
-                MessageBox.Show("Please ensure AI is enabled and a file is selected.", "Batch Translate",
+                MessageBox.Show("Please ensure AI is enabled and a file is selected.", "AI Translate",
                                MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
 
-            var selected = SelectedFile.Entries.Where(e => e.IsSelected && !e.IsTranslated).ToList();
-            if (selected.Count == 0)
+            var config = Services.SettingsService.LoadConfig();
+            var overwriteExisting = config.OverwriteExistingTranslations;
+            
+            // Smart selection: use ticked entries, or current entry passed as parameter
+            var tickedEntries = SelectedFile.Entries.Where(e => e.IsSelected).ToList();
+            List<LocalizationEntryViewModel> entriesToTranslate;
+            
+            if (tickedEntries.Count > 0)
             {
-                MessageBox.Show("No untranslated entries selected. Select entries using the checkbox column.",
-                               "Batch Translate", MessageBoxButton.OK, MessageBoxImage.Information);
+                // Batch mode: translate all ticked entries
+                entriesToTranslate = overwriteExisting
+                    ? tickedEntries // All ticked, including translated
+                    : tickedEntries.Where(e => !e.IsTranslated).ToList(); // Only untranslated
+            }
+            else if (parameter is LocalizationEntryViewModel currentEntry)
+            {
+                // Single mode: translate current row if nothing is ticked
+                if (!overwriteExisting && currentEntry.IsTranslated)
+                {
+                    var result = MessageBox.Show(
+                        $"Entry '{currentEntry.Key}' is already translated.\n\nOverwrite existing translation?\n\nTip: Enable 'Overwrite Existing Translations' in Settings to skip this prompt.",
+                        "Confirm Overwrite",
+                        MessageBoxButton.YesNo,
+                        MessageBoxImage.Question);
+                    
+                    if (result != MessageBoxResult.Yes)
+                    {
+                        StatusMessage = "Translation cancelled";
+                        return;
+                    }
+                }
+                entriesToTranslate = new List<LocalizationEntryViewModel> { currentEntry };
+            }
+            else
+            {
+                MessageBox.Show(
+                    "No entries to translate.\n\n• Tick entries to translate multiple at once\n• Or click a row and press the Translate button",
+                    "AI Translate", 
+                    MessageBoxButton.OK, 
+                    MessageBoxImage.Information);
+                return;
+            }
+            
+            if (entriesToTranslate.Count == 0)
+            {
+                var message = overwriteExisting
+                    ? "No entries to translate. Please tick entries first."
+                    : "No untranslated entries found. To translate already-translated entries, enable 'Overwrite Existing Translations' in Settings.";
+                MessageBox.Show(message, "AI Translate", MessageBoxButton.OK, MessageBoxImage.Information);
                 return;
             }
 
-            var result = MessageBox.Show($"Translate {selected.Count} selected entries with AI?\n\nThis may take several minutes and consume API quota.",
-                                        "Batch Translate", MessageBoxButton.YesNo, MessageBoxImage.Question);
-            if (result != MessageBoxResult.Yes) return;
+            // Confirmation message
+            string confirmMessage;
+            if (entriesToTranslate.Count == 1)
+            {
+                confirmMessage = $"Translate entry '{entriesToTranslate[0].Key}' with AI?";
+            }
+            else
+            {
+                var alreadyTranslated = entriesToTranslate.Count(e => e.IsTranslated);
+                confirmMessage = overwriteExisting && alreadyTranslated > 0
+                    ? $"Translate {entriesToTranslate.Count} entries with AI?\n\n⚠️ {alreadyTranslated} entries are already translated and will be overwritten.\n\nThis may take several minutes and consume API quota."
+                    : $"Translate {entriesToTranslate.Count} entries with AI?\n\nThis may take several minutes and consume API quota.";
+            }
+            
+            var confirmResult = MessageBox.Show(confirmMessage, "AI Translate", MessageBoxButton.YesNo, MessageBoxImage.Question);
+            if (confirmResult != MessageBoxResult.Yes) return;
 
             try
             {
-                StatusMessage = $"Batch translating {selected.Count} entries...";
-                var config = Services.SettingsService.LoadConfig();
+                StatusMessage = $"Translating {entriesToTranslate.Count} {(entriesToTranslate.Count == 1 ? "entry" : "entries")}...";
                 config.SourceLanguage = SourceLanguage;
                 config.TargetLanguage = TargetLanguage;
                 var translationService = new TranslationService(config);
 
                 int completed = 0, failed = 0;
-                foreach (var entry in selected)
+                foreach (var entry in entriesToTranslate)
                 {
                     try
                     {
@@ -869,7 +888,7 @@ namespace ParadoxTranslator.ViewModels
                             entry.Status = $"Failed: {translateResult.ErrorMessage}";
                             failed++;
                         }
-                        StatusMessage = $"Batch progress: {completed + failed}/{selected.Count} ({completed} success, {failed} failed)";
+                        StatusMessage = $"Progress: {completed + failed}/{entriesToTranslate.Count} ({completed} success, {failed} failed)";
                     }
                     catch
                     {
@@ -880,19 +899,133 @@ namespace ParadoxTranslator.ViewModels
 
                 await SaveAllAsync();
                 SelectedFile.RecalculateCounts();
-                StatusMessage = $"Batch translation completed: {completed} success, {failed} failed";
+                StatusMessage = $"Translation completed: {completed} success, {failed} failed";
                 ShowToastCallback?.Invoke(
-                    failed > 0 ? "Batch Translation Complete (with errors)" : "Batch Translation Complete",
+                    failed > 0 ? "Translation Complete (with errors)" : "Translation Complete",
                     $"{completed} translated, {failed} failed",
                     failed > 0 ? 2 : 0 // 2 = Warning if failures, 0 = Success
                 );
-                MessageBox.Show($"Batch translation completed!\n\nSuccessful: {completed}\nFailed: {failed}",
-                               "Batch Translate", MessageBoxButton.OK, MessageBoxImage.Information);
             }
             catch (Exception ex)
             {
-                StatusMessage = $"Batch translation error: {ex.Message}";
-                MessageBox.Show($"Error during batch translation:\n{ex.Message}", "Error",
+                StatusMessage = $"Translation error: {ex.Message}";
+                MessageBox.Show($"Error during translation:\n{ex.Message}", "Error",
+                               MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private async void CompareWithNewVersion(object? parameter)
+        {
+            if (SelectedFile == null)
+            {
+                MessageBox.Show("Please select a file to compare.", "Compare Versions",
+                               MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            try
+            {
+                // Ask user to select new version file
+                var dialog = new OpenFileDialog
+                {
+                    Title = "Select New Version File",
+                    Filter = "YAML files (*.yml;*.yaml)|*.yml;*.yaml|All files (*.*)|*.*",
+                    FilterIndex = 1
+                };
+
+                if (dialog.ShowDialog() != true) return;
+
+                StatusMessage = "Comparing file versions...";
+
+                // Parse new version file
+                var newEntries = await ParadoxParser.ParseFileAsync(dialog.FileName);
+
+                // Get current entries from selected file
+                var currentEntries = SelectedFile.Entries.Select(e => e.Entry).ToList();
+
+                // Get existing translations
+                var existingTranslations = SelectedFile.Entries
+                    .Where(e => !string.IsNullOrWhiteSpace(e.Entry.TranslatedText))
+                    .ToDictionary(e => e.Entry.Key, e => e.Entry.TranslatedText);
+
+                // Get project ID (or use a default)
+                var projectId = "default"; // TODO: Get from current project
+
+                // Create snapshots
+                var oldVersion = new Models.FileVersion
+                {
+                    FilePath = SelectedFile.FilePath,
+                    GameVersion = "Current",
+                    ImportDate = SelectedFile.LastModified,
+                    Entries = currentEntries,
+                    FileHash = VersionControlService.CalculateEntriesHash(currentEntries)
+                };
+
+                var newVersion = new Models.FileVersion
+                {
+                    FilePath = dialog.FileName,
+                    GameVersion = "New",
+                    ImportDate = DateTime.Now,
+                    Entries = newEntries.ToList(),
+                    FileHash = VersionControlService.CalculateFileHash(dialog.FileName)
+                };
+
+                // Compare versions
+                var comparison = FileComparisonService.CompareVersions(oldVersion, newVersion, existingTranslations);
+
+                StatusMessage = $"Found {comparison.NewCount} new, {comparison.ModifiedCount} modified, {comparison.DeletedCount} deleted entries";
+
+                // Show comparison window
+                var comparisonWindow = new ComparisonWindow(projectId, comparison)
+                {
+                    Owner = Application.Current.MainWindow,
+                    WindowStartupLocation = WindowStartupLocation.CenterOwner
+                };
+
+                if (comparisonWindow.ShowDialog() == true && comparisonWindow.ChangesApplied)
+                {
+                    // Apply changes from comparison
+                    var updatedEntries = FileComparisonService.ApplyComparisonResults(comparison);
+
+                    // Update current file with merged entries
+                    SelectedFile.Entries.Clear();
+                    var updatedViewModels = updatedEntries.Select(e => new LocalizationEntryViewModel(e)).ToList();
+                    
+                    // Hook change tracking
+                    foreach (var vmEntry in updatedViewModels)
+                    {
+                        if (_watchedEntries.Add(vmEntry))
+                        {
+                            vmEntry.PropertyChanged += OnEntryPropertyChanged;
+                        }
+                    }
+
+                    foreach (var vm in updatedViewModels)
+                    {
+                        SelectedFile.Entries.Add(vm);
+                    }
+
+                    SelectedFile.RecalculateCounts();
+
+                    // Save snapshot of new version
+                    VersionControlService.CreateSnapshot(projectId, dialog.FileName, "New", newEntries.ToList(), 
+                        $"Compared with {Path.GetFileName(SelectedFile.FilePath)}");
+
+                    await SaveAllAsync();
+
+                    StatusMessage = $"Successfully merged changes from new version";
+                    ShowToastCallback?.Invoke("Version Merged", 
+                        $"Applied {comparison.NewCount} new and {comparison.ModifiedCount} modified entries", 0);
+                }
+                else
+                {
+                    StatusMessage = "Comparison cancelled";
+                }
+            }
+            catch (Exception ex)
+            {
+                StatusMessage = $"Error comparing versions: {ex.Message}";
+                MessageBox.Show($"Error comparing versions:\n{ex.Message}", "Error",
                                MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }

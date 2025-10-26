@@ -1,6 +1,7 @@
 using System.Windows;
 using System.Windows.Controls;
 using ParadoxTranslator.Models;
+using MessageBox = ParadoxTranslator.Utils.ModernMessageBox;
 
 namespace ParadoxTranslator
 {

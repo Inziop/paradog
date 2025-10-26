@@ -12,24 +12,21 @@ namespace ParadoxTranslator.Controls
         private readonly DispatcherTimer _autoCloseTimer;
         private Storyboard? _showStoryboard;
         private Storyboard? _hideStoryboard;
+        private DoubleAnimation? _progressAnimation;
 
         public ToastNotification()
         {
             InitializeComponent();
             
-            _autoCloseTimer = new DispatcherTimer
-            {
-                Interval = TimeSpan.FromSeconds(6)
-            };
-            _autoCloseTimer.Tick += (s, e) => Hide();
-            
-            Loaded += OnLoaded;
-        }
-
-        private void OnLoaded(object sender, RoutedEventArgs e)
-        {
+            // Load storyboards immediately instead of waiting for Loaded event
             _showStoryboard = (Storyboard)Resources["ShowToast"];
             _hideStoryboard = (Storyboard)Resources["HideToast"];
+            
+            _autoCloseTimer = new DispatcherTimer
+            {
+                Interval = TimeSpan.FromSeconds(3) // Quick 3-second display
+            };
+            _autoCloseTimer.Tick += (s, e) => Hide();
         }
 
         public void Show(string title, string message, ToastType type = ToastType.Success)
@@ -37,38 +34,54 @@ namespace ParadoxTranslator.Controls
             TitleText.Text = title;
             MessageText.Text = message;
             
-            // Set colors and icon based on type
-            var border = (Border)Content;
+            // Set colors and icon based on type with modern dark theme
             switch (type)
             {
                 case ToastType.Success:
-                    border.Background = new SolidColorBrush(Color.FromRgb(40, 167, 69));
-                    border.BorderBrush = new SolidColorBrush(Color.FromRgb(30, 126, 52));
+                    IconBorder.Background = new SolidColorBrush(Color.FromRgb(40, 167, 69)); // Green
                     IconText.Text = "✓";
                     break;
                 case ToastType.Info:
-                    border.Background = new SolidColorBrush(Color.FromRgb(0, 122, 204));
-                    border.BorderBrush = new SolidColorBrush(Color.FromRgb(0, 92, 153));
-                    IconText.Text = "ℹ";
+                    IconBorder.Background = new SolidColorBrush(Color.FromRgb(0, 122, 204)); // Blue
+                    IconText.Text = "ⓘ";
                     break;
                 case ToastType.Warning:
-                    border.Background = new SolidColorBrush(Color.FromRgb(255, 193, 7));
-                    border.BorderBrush = new SolidColorBrush(Color.FromRgb(204, 154, 5));
+                    IconBorder.Background = new SolidColorBrush(Color.FromRgb(255, 193, 7)); // Yellow
                     IconText.Text = "⚠";
-                    TitleText.Foreground = new SolidColorBrush(Colors.Black);
-                    MessageText.Foreground = new SolidColorBrush(Color.FromRgb(60, 60, 60));
-                    CloseButton.Foreground = new SolidColorBrush(Colors.Black);
                     break;
                 case ToastType.Error:
-                    border.Background = new SolidColorBrush(Color.FromRgb(220, 53, 69));
-                    border.BorderBrush = new SolidColorBrush(Color.FromRgb(176, 42, 55));
+                    IconBorder.Background = new SolidColorBrush(Color.FromRgb(220, 53, 69)); // Red
                     IconText.Text = "✖";
                     break;
             }
 
+            // SIMPLIFIED: Just make it visible immediately without animation
             Visibility = Visibility.Visible;
-            _showStoryboard?.Begin(this);
+            Opacity = 1;
+            
             _autoCloseTimer.Start();
+            
+            // Animate progress bar from full width to 0 (countdown effect)
+            var progressColor = type switch
+            {
+                ToastType.Success => Color.FromRgb(40, 167, 69),
+                ToastType.Info => Color.FromRgb(0, 122, 204),
+                ToastType.Warning => Color.FromRgb(255, 193, 7),
+                ToastType.Error => Color.FromRgb(220, 53, 69),
+                _ => Color.FromRgb(40, 167, 69)
+            };
+            
+            ProgressBarFill.Background = new SolidColorBrush(progressColor);
+            
+            // Animate width from 380 to 0
+            _progressAnimation = new DoubleAnimation
+            {
+                From = 380,
+                To = 0,
+                Duration = TimeSpan.FromSeconds(3)
+            };
+            
+            ProgressBarFill.BeginAnimation(Border.WidthProperty, _progressAnimation);
         }
 
         public void Hide()

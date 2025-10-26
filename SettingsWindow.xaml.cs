@@ -6,6 +6,7 @@ using System.Text.Json;
 using System.Windows;
 using System.Windows.Controls;
 using ParadoxTranslator.ViewModels;
+using MessageBox = ParadoxTranslator.Utils.ModernMessageBox;
 
 namespace ParadoxTranslator;
 
@@ -15,6 +16,8 @@ namespace ParadoxTranslator;
 public partial class SettingsWindow : Window, IDisposable
 {
     private readonly HttpClient _httpClient = new();
+    public Action<string, string, int>? ShowToastCallback { get; set; }
+    
     public SettingsWindow()
     {
         InitializeComponent();
@@ -197,6 +200,9 @@ Would you like to open the Google Cloud Console?";
         
         // Reload translation memory config and enforce new limit if needed
         Services.TranslationMemoryService.Instance.ReloadConfig();
+        
+        // Show toast notification
+        ShowToastCallback?.Invoke("Settings Saved", "Configuration saved successfully", 0); // 0 = Success
         
         DialogResult = true;
         Close();

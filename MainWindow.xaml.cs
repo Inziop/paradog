@@ -15,7 +15,6 @@ namespace ParadoxTranslator
 {
     public partial class MainWindow : Window
     {
-        private DispatcherTimer? _toastDebounceTimer;
         private Project _currentProject;
         
         public MainWindow(Project project)
@@ -29,6 +28,9 @@ namespace ParadoxTranslator
             // Set project languages
             viewModel.SourceLanguage = project.SourceLanguage;
             viewModel.TargetLanguage = project.TargetLanguage;
+            
+            // Wire up Toast callback
+            viewModel.ShowToastCallback = (title, message, type) => ShowToast(title, message, (ToastType)type);
 
             // Update project name in header
             ProjectNameTextBlock.Text = project.Name;
@@ -54,6 +56,7 @@ namespace ParadoxTranslator
             
             // Toolbar buttons
             OpenFileButton.Content = $"📂 {loc["OpenFile"]}";
+            CompareButton.Content = $"🔄 {loc["Compare"]}";
             SettingsButton.Content = $"⚙️ {loc["Settings"]}";
             StatisticsButton.Content = $"📊 {loc["Statistics"]}";
             ExportButton.Content = $"💾 {loc["MenuExport"]}";
@@ -70,7 +73,7 @@ namespace ParadoxTranslator
             // Batch action buttons
             SelectAllButton.Content = loc["SelectAll"];
             DeselectAllButton.Content = loc["DeselectAll"];
-            TranslateSelectedButton.Content = $"🤖 {loc["TranslateSelected"]}";
+            TranslateButton.Content = $"🤖 {loc["TranslateSelected"]}";
             
             // Switch project button
             SwitchProjectButton.Content = $"⇄ {loc["SwitchProject"]}";
@@ -135,38 +138,23 @@ namespace ParadoxTranslator
 
         public void ShowToast(string title, string message, ToastType type = ToastType.Success)
         {
-            // Debounce: prevent toasts from showing too frequently
-            if (_toastDebounceTimer != null && _toastDebounceTimer.IsEnabled)
+            // Must be on UI thread
+            if (!Dispatcher.CheckAccess())
             {
-                System.Diagnostics.Debug.WriteLine($"Toast debounced: {title}");
-                return; // Ignore if a toast was just shown
+                Dispatcher.Invoke(() => ShowToast(title, message, type));
+                return;
             }
             
-            // Debug: Log to see if this is being called multiple times
-            System.Diagnostics.Debug.WriteLine($"ShowToast called: {title} - {message}");
-            
-            // Remove any existing toasts first to prevent overlap
-            ToastContainer.Children.Clear();
-            
             var toast = new ToastNotification();
-            ToastContainer.Children.Add(toast);
+            ToastContainer?.Children.Add(toast);
             toast.Show(title, message, type);
             
-            // Set up debounce timer (prevent new toasts for 5 seconds)
-            _toastDebounceTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(5) };
-            _toastDebounceTimer.Tick += (s, e) =>
-            {
-                _toastDebounceTimer?.Stop();
-                _toastDebounceTimer = null;
-            };
-            _toastDebounceTimer.Start();
-            
-            // Auto-remove from container after hide animation
-            var removeTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(4.5) };
+            // Auto-remove from container after animation completes (3s display + 0.2s fade-out)
+            var removeTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(3.3) };
             removeTimer.Tick += (s, e) =>
             {
                 removeTimer.Stop();
-                ToastContainer.Children.Remove(toast);
+                ToastContainer?.Children.Remove(toast);
             };
             removeTimer.Start();
         }
@@ -458,6 +446,20 @@ namespace ParadoxTranslator
                 // Update project with current file list
                 _currentProject.FilePaths = vm.Files.Select(f => f.FilePath).ToList();
                 ProjectService.SaveProject(_currentProject);
+            }
+        }
+
+        private void OnTranslateClick(object sender, RoutedEventArgs e)
+        {
+            if (DataContext is MainViewModel vm && EntriesDataGrid.SelectedItem is LocalizationEntryViewModel selectedEntry)
+            {
+                // Pass selected entry to command
+                vm.BatchTranslateCommand.Execute(selectedEntry);
+            }
+            else if (DataContext is MainViewModel vm2)
+            {
+                // No selection, pass null (will use ticked entries)
+                vm2.BatchTranslateCommand.Execute(null);
             }
         }
     }
