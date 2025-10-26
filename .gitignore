@@ -396,3 +396,8 @@ $RECYCLE.BIN/
 *.tmp
 *.bak
 *.backup
+
+# Large release files
+*.zip
+*.tar.gz
+*.7z
