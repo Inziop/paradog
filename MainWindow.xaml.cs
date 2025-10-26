@@ -274,6 +274,63 @@ namespace ParadoxTranslator
             }
         }
 
+        private void OnScanModFolder(object sender, RoutedEventArgs e)
+        {
+            // Open folder picker using WindowsAPICodePack
+            var dialog = new Microsoft.WindowsAPICodePack.Dialogs.CommonOpenFileDialog
+            {
+                Title = "Select mod folder to scan",
+                IsFolderPicker = true,
+                EnsurePathExists = true
+            };
+
+            if (dialog.ShowDialog() != Microsoft.WindowsAPICodePack.Dialogs.CommonFileDialogResult.Ok)
+                return;
+
+            var modPath = dialog.FileName;
+            
+            // Get game configuration
+            var gameConfig = GameConfig.GetAllConfigs()[_currentProject.GameType];
+            
+            // Prepare target languages (exclude source language)
+            var targetLanguages = new[] { "english", "french", "german", "spanish", 
+                                         "portuguese", "russian", "polish", "simp_chinese", 
+                                         "japanese", "korean" }
+                .Where(lang => lang != _currentProject.SourceLanguage)
+                .ToList();
+
+            try
+            {
+                // Perform scan (no progress dialog, do it synchronously)
+                var scanner = new FolderScannerService();
+                var summary = scanner.PerformComprehensiveScan(
+                    modPath,
+                    gameConfig.LocalizationFolder,
+                    _currentProject.SourceLanguage,
+                    targetLanguages
+                );
+
+                // Show results window
+                var resultsWindow = new FolderScanResultsWindow(
+                    summary,
+                    _currentProject.SourceLanguage,
+                    gameConfig
+                );
+                resultsWindow.Owner = this;
+                resultsWindow.ShowDialog();
+            }
+            catch (Exception ex)
+            {
+                LoggingService.Log("ERROR", "Error scanning folder", ex);
+                Utils.ModernMessageBox.Show(
+                    $"Error scanning folder: {ex.Message}",
+                    "Scan Error",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error
+                );
+            }
+        }
+
         private async Task LoadProject(Project project)
         {
             _currentProject = project;

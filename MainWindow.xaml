@@ -143,11 +143,19 @@
                     </Grid.ColumnDefinitions>
 
                     <!-- Project Switch Button -->
-                    <Button Grid.Column="0" x:Name="SwitchProjectButton" Content="⇄ Switch" 
-                            Click="OnSwitchProject"
-                            Background="#6C757D" Style="{StaticResource HeaderButtonStyle}"
-                            Padding="12,6" Margin="0,0,15,0"
-                            ToolTip="Switch to another project"/>
+                    <StackPanel Grid.Column="0" Orientation="Horizontal">
+                        <Button x:Name="SwitchProjectButton" Content="⇄ Switch" 
+                                Click="OnSwitchProject"
+                                Background="#6C757D" Style="{StaticResource HeaderButtonStyle}"
+                                Padding="12,6" Margin="0,0,10,0"
+                                ToolTip="Switch to another project"/>
+                        
+                        <Button x:Name="ScanModFolderButton" Content="📁 Scan Folder" 
+                                Click="OnScanModFolder"
+                                Background="#007ACC" Style="{StaticResource HeaderButtonStyle}"
+                                Padding="12,6" Margin="0,0,0,0"
+                                ToolTip="Scan mod folder for missing localization files"/>
+                    </StackPanel>
 
                     <!-- Spacer -->
                     <Grid Grid.Column="1"/>

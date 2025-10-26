@@ -103,7 +103,7 @@
             </TextBox>
 
             <!-- Game Type -->
-            <TextBlock Text="Game Type (Optional)" FontSize="13" 
+            <TextBlock Text="Game Type" FontSize="13" 
                        Foreground="#CCCCCC" Margin="0,0,0,5"/>
             <ComboBox x:Name="GameTypeComboBox" 
                       Style="{StaticResource ModernComboBox}"
@@ -120,23 +120,41 @@
                         <Setter Property="Background" Value="#FFFFFF"/>
                     </Style>
                 </ComboBox.Resources>
-                <ComboBoxItem Tag="HoI4">
-                    <TextBlock Text="Hearts of Iron IV" Foreground="Black"/>
+                <ComboBoxItem Tag="Generic" IsSelected="True">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="🎮 " Foreground="Black"/>
+                        <TextBlock Text="Generic Paradox Game" Foreground="Black"/>
+                    </StackPanel>
                 </ComboBoxItem>
                 <ComboBoxItem Tag="Stellaris">
-                    <TextBlock Text="Stellaris" Foreground="Black"/>
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="🌌 " Foreground="Black"/>
+                        <TextBlock Text="Stellaris" Foreground="Black"/>
+                    </StackPanel>
                 </ComboBoxItem>
-                <ComboBoxItem Tag="CK3">
-                    <TextBlock Text="Crusader Kings III" Foreground="Black"/>
+                <ComboBoxItem Tag="HeartsOfIronIV">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="⚔️ " Foreground="Black"/>
+                        <TextBlock Text="Hearts of Iron IV" Foreground="Black"/>
+                    </StackPanel>
                 </ComboBoxItem>
-                <ComboBoxItem Tag="EU4">
-                    <TextBlock Text="Europa Universalis IV" Foreground="Black"/>
+                <ComboBoxItem Tag="EuropaUniversalisIV">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="🗺️ " Foreground="Black"/>
+                        <TextBlock Text="Europa Universalis IV" Foreground="Black"/>
+                    </StackPanel>
+                </ComboBoxItem>
+                <ComboBoxItem Tag="CrusaderKings3">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="👑 " Foreground="Black"/>
+                        <TextBlock Text="Crusader Kings III" Foreground="Black"/>
+                    </StackPanel>
                 </ComboBoxItem>
                 <ComboBoxItem Tag="Victoria3">
-                    <TextBlock Text="Victoria 3" Foreground="Black"/>
-                </ComboBoxItem>
-                <ComboBoxItem Tag="Other" IsSelected="True">
-                    <TextBlock Text="Other" Foreground="Black"/>
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="🎩 " Foreground="Black"/>
+                        <TextBlock Text="Victoria 3" Foreground="Black"/>
+                    </StackPanel>
                 </ComboBoxItem>
             </ComboBox>
 

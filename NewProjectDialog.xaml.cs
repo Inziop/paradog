@@ -1,3 +1,4 @@
+using System;
 using System.Windows;
 using System.Windows.Controls;
 using ParadoxTranslator.Models;
@@ -26,7 +27,11 @@ namespace ParadoxTranslator
                 return;
             }
 
-            var gameType = (GameTypeComboBox.SelectedItem as ComboBoxItem)?.Tag?.ToString();
+            var gameTypeStr = (GameTypeComboBox.SelectedItem as ComboBoxItem)?.Tag?.ToString();
+            var gameType = string.IsNullOrEmpty(gameTypeStr) || !Enum.TryParse<GameType>(gameTypeStr, out var parsedType)
+                ? GameType.Generic
+                : parsedType;
+            
             var sourceLanguage = (SourceLanguageComboBox.SelectedItem as ComboBoxItem)?.Tag?.ToString() ?? "en";
             var targetLanguage = (TargetLanguageComboBox.SelectedItem as ComboBoxItem)?.Tag?.ToString() ?? "vi";
 
