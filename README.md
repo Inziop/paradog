@@ -169,6 +169,4 @@ Please use the [Issues](https://github.com/yourusername/ParadoxTranslator/issues
 - Enable auto-save for long translation sessions
 - Use search to quickly find specific entries
 
----
 
-**Made with ❤️ for the Paradox Interactive community**
