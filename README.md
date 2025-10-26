@@ -1,7 +1,3 @@
-# 🎮 Paradox Translator
-
-A powerful WPF application for translating Paradox Interactive game localization files with support for multiple translation engines and advanced features.
-
 ## ✨ Features
 
 ### 🔧 Core Functionality
@@ -154,13 +150,6 @@ Please use the [Issues](https://github.com/yourusername/ParadoxTranslator/issues
 - Ask questions
 - Share feedback
 
-## 📈 Roadmap
-
-- [ ] **v1.1**: Batch processing improvements
-- [ ] **v1.2**: Plugin system for custom translation engines
-- [ ] **v1.3**: Cloud sync and collaboration features
-- [ ] **v1.4**: AI-powered translation suggestions
-- [ ] **v2.0**: Cross-platform support (Linux, macOS)
 
 ## 💡 Tips & Tricks
 
@@ -176,6 +165,4 @@ Please use the [Issues](https://github.com/yourusername/ParadoxTranslator/issues
 - Enable auto-save for long translation sessions
 - Use search to quickly find specific entries
 
----
 
-**Made with ❤️ for the Paradox Interactive community**
