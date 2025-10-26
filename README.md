@@ -1,7 +1,3 @@
-# 🎮 Paradox Translator
-
-A powerful WPF application for translating Paradox Interactive game localization files with support for multiple translation engines and advanced features.
-
 ## ✨ Features
 
 ### 🔧 Core Functionality
