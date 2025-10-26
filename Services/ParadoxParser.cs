@@ -10,14 +10,18 @@ namespace ParadoxTranslator.Services;
 /// </summary>
 public class ParadoxParser
 {
-    private static readonly Regex KeyValueRegex = new(@"^([^#\s]+)\s*[:=]\s*(\d+)?\s*""([^""]*(?:""[^""]*)*)""", RegexOptions.Compiled);
+    // Fixed regex: Removed catastrophic backtracking pattern, added timeout
+    private static readonly Regex KeyValueRegex = new(
+        @"^([^#\s]+)\s*[:=]\s*(\d+)?\s*""([^""]*)""", 
+        RegexOptions.Compiled, 
+        TimeSpan.FromSeconds(1));
     private static readonly Regex CommentRegex = new(@"^\s*#", RegexOptions.Compiled);
     private static readonly Regex HeaderRegex = new(@"^l_\w+:", RegexOptions.Compiled);
 
     /// <summary>
     /// Parse a localization file from stream
     /// </summary>
-    public static IEnumerable<LocalizationEntry> Parse(StreamReader reader)
+    public static List<LocalizationEntry> Parse(TextReader reader)
     {
         var entries = new List<LocalizationEntry>();
         string? line;
@@ -77,10 +81,12 @@ public class ParadoxParser
     /// <summary>
     /// Parse a localization file from file path
     /// </summary>
-    public static Task<IEnumerable<LocalizationEntry>> ParseFileAsync(string filePath)
+    public static async Task<List<LocalizationEntry>> ParseFileAsync(string filePath)
     {
-        using var reader = new StreamReader(filePath, Encoding.UTF8, detectEncodingFromByteOrderMarks: true);
-        return Task.FromResult(Parse(reader));
+        // Use true async I/O to avoid blocking UI thread
+        var content = await File.ReadAllTextAsync(filePath, Encoding.UTF8);
+        using var reader = new StringReader(content);
+        return Parse(reader);
     }
 
     /// <summary>

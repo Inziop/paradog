@@ -270,6 +270,14 @@ public class FolderScannerService
                 createdFiles.Add(actualTargetFile);
                 LoggingService.Log("INFO", $"Created: {actualTargetFile}");
             }
+            catch (UnauthorizedAccessException ex)
+            {
+                LoggingService.Log("ERROR", $"Permission denied: {targetFile}", ex);
+            }
+            catch (IOException ex)
+            {
+                LoggingService.Log("ERROR", $"IO error (disk full or file locked): {targetFile}", ex);
+            }
             catch (Exception ex)
             {
                 LoggingService.Log("ERROR", $"Error creating {targetFile}", ex);
@@ -314,9 +322,17 @@ path=""mod/{Path.GetFileName(modFolderPath)}""
             File.WriteAllText(descriptorPath, modContent);
             LoggingService.Log("INFO", $"Created mod descriptor: {descriptorPath}");
         }
+        catch (UnauthorizedAccessException ex)
+        {
+            LoggingService.Log("ERROR", $"Permission denied creating mod descriptor: {modFolderPath}", ex);
+        }
+        catch (IOException ex)
+        {
+            LoggingService.Log("ERROR", $"IO error creating mod descriptor: {modFolderPath}", ex);
+        }
         catch (Exception ex)
         {
-            LoggingService.Log("ERROR", $"Error creating mod descriptor", ex);
+            LoggingService.Log("ERROR", $"Error creating mod descriptor for {modFolderPath}", ex);
         }
     }
 }
