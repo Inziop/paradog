@@ -11,17 +11,11 @@ public static class AsyncHelpers
     /// <summary>
     /// Convert IEnumerable to ObservableCollection asynchronously
     /// </summary>
-    public static async Task<ObservableCollection<T>> ToObservableCollectionAsync<T>(this IEnumerable<T> source)
+    public static Task<ObservableCollection<T>> ToObservableCollectionAsync<T>(this IEnumerable<T> source)
     {
-        var collection = new ObservableCollection<T>();
-        await Task.Run(() =>
-        {
-            foreach (var item in source)
-            {
-                collection.Add(item);
-            }
-        });
-        return collection;
+        // Use constructor for single allocation + single CollectionChanged event
+        // Much faster than Task.Run + N Add() calls with N events
+        return Task.FromResult(new ObservableCollection<T>(source));
     }
 
     /// <summary>
