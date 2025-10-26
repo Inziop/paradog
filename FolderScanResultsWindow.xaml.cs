@@ -32,10 +32,18 @@ namespace ParadoxTranslator
             var totalMissing = _summary.MissingFilesByLanguage.Sum(kvp => kvp.Value);
             var totalExisting = _summary.ExistingFilesByLanguage.Sum(kvp => kvp.Value);
             
-            SummaryText.Text = $"Total files scanned: {_summary.TotalFilesScanned} | " +
+            var summaryText = $"Total files scanned: {_summary.TotalFilesScanned} | " +
                               $"Source files: {_summary.SourceLanguageFiles} | " +
                               $"Existing: {totalExisting} | " +
                               $"Missing: {totalMissing}";
+            
+            if (_gameConfig.UseOverrideMode)
+            {
+                summaryText += $"\n⚠️ Override Mode: Files will be created in '{_gameConfig.OverrideLanguage}/' folder " +
+                              $"to override game language (game doesn't support custom languages)";
+            }
+            
+            SummaryText.Text = summaryText;
             
             // Display results (only missing files by default)
             var missingFiles = _summary.AllResults.Where(r => !r.Exists).ToList();
@@ -50,12 +58,31 @@ namespace ParadoxTranslator
             if (sender is not System.Windows.Controls.Button button || button.Tag is not ScanResult result)
                 return;
 
+            string? outputFolder = null;
+            
+            // In override mode, ask for output mod folder
+            if (_gameConfig.UseOverrideMode)
+            {
+                var folderDialog = new Microsoft.WindowsAPICodePack.Dialogs.CommonOpenFileDialog
+                {
+                    IsFolderPicker = true,
+                    Title = "Select Output Mod Folder",
+                    InitialDirectory = System.IO.Path.GetDirectoryName(_summary.ModFolderPath)
+                };
+
+                if (folderDialog.ShowDialog() != Microsoft.WindowsAPICodePack.Dialogs.CommonFileDialogResult.Ok)
+                    return;
+
+                outputFolder = folderDialog.FileName;
+            }
+
             var scanner = new FolderScannerService();
             var created = scanner.GenerateMissingFiles(
                 new List<string> { result.FilePath },
                 _sourceLanguage,
                 result.Language,
-                _gameConfig
+                _gameConfig,
+                outputFolder
             );
 
             if (created.Any())
@@ -92,6 +119,34 @@ namespace ParadoxTranslator
             if (result != MessageBoxResult.Yes)
                 return;
 
+            string? outputFolder = null;
+            
+            // In override mode, ask for output mod folder
+            if (_gameConfig.UseOverrideMode)
+            {
+                var folderDialog = new Microsoft.WindowsAPICodePack.Dialogs.CommonOpenFileDialog
+                {
+                    IsFolderPicker = true,
+                    Title = "Select Output Mod Folder (for Override Mod)",
+                    InitialDirectory = System.IO.Path.GetDirectoryName(_summary.ModFolderPath)
+                };
+
+                if (folderDialog.ShowDialog() != Microsoft.WindowsAPICodePack.Dialogs.CommonFileDialogResult.Ok)
+                    return;
+
+                outputFolder = folderDialog.FileName;
+                
+                // Show information about override mode
+                MessageBox.Show(
+                    $"Override mode: Files will be created in '{_gameConfig.OverrideLanguage}/' folder\n" +
+                    $"with l_{_gameConfig.OverrideLanguage}: headers to override the game's English text.\n\n" +
+                    $"This is necessary because {_gameConfig.DisplayName} doesn't support custom languages.",
+                    "Override Mode",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Information
+                );
+            }
+
             var scanner = new FolderScannerService();
             var totalCreated = 0;
 
@@ -107,7 +162,8 @@ namespace ParadoxTranslator
                     langMissing,
                     _sourceLanguage,
                     lang,
-                    _gameConfig
+                    _gameConfig,
+                    outputFolder
                 );
 
                 totalCreated += created.Count;
@@ -122,6 +178,14 @@ namespace ParadoxTranslator
             }
 
             ResultsDataGrid.Items.Refresh();
+            
+            // Generate .mod descriptor file in override mode
+            if (_gameConfig.UseOverrideMode && outputFolder != null)
+            {
+                var modName = $"Vietnamese Translation for {_gameConfig.DisplayName}";
+                scanner.GenerateModDescriptor(outputFolder, modName, missingFiles.FirstOrDefault()?.Language ?? "vi", _gameConfig);
+            }
+            
             MessageBox.Show($"Successfully generated {totalCreated} file(s).", "Success", 
                           MessageBoxButton.OK, MessageBoxImage.Information);
             

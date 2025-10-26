@@ -193,12 +193,8 @@
                     <StackPanel Margin="20">
                             <TextBlock Text="Select your preferred translation service:" 
                                        Margin="0,0,0,12" Foreground="#CCCCCC" FontSize="13"/>
-                                <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
-                                    <CheckBox x:Name="EnableAICheckBox" Content="Enable AI translation" Foreground="White" FontSize="13" Margin="0,0,15,0"/>
-                                    <TextBlock Text="(" Foreground="#888888" VerticalAlignment="Center"/>
-                                    <TextBlock Text="If enabled, translations use the configured AI engine and API key" Foreground="#888888" VerticalAlignment="Center" FontSize="12"/>
-                                    <TextBlock Text=")" Foreground="#888888" VerticalAlignment="Center"/>
-                                </StackPanel>
+                            <TextBlock Text="Enable/disable AI translation using the toggle in the main toolbar." 
+                                       Margin="0,0,0,12" Foreground="#888888" FontSize="12" FontStyle="Italic"/>
 
                     <ComboBox x:Name="EngineComboBox" Width="250" Margin="0,0,0,15"
                             Style="{StaticResource SettingsComboBoxStyle}">

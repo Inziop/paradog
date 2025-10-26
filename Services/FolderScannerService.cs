@@ -14,6 +14,7 @@ public class FolderScannerService
     public List<string> ScanLocalizationFiles(string modPath, string localizationFolder)
     {
         LoggingService.Log("INFO", $"Scanning folder: {modPath}");
+        LoggingService.Log("INFO", $"Looking for localization folder: {localizationFolder}");
         var ymlFiles = new List<string>();
         
         if (!Directory.Exists(modPath))
@@ -24,6 +25,13 @@ public class FolderScannerService
 
         ScanDirectory(modPath, localizationFolder, ymlFiles);
         LoggingService.Log("INFO", $"Found {ymlFiles.Count} localization files");
+        
+        // Debug: Log first few files
+        for (int i = 0; i < Math.Min(5, ymlFiles.Count); i++)
+        {
+            LoggingService.Log("INFO", $"Sample file {i + 1}: {ymlFiles[i]}");
+        }
+        
         return ymlFiles;
     }
 
@@ -34,20 +42,17 @@ public class FolderScannerService
     {
         try
         {
+            // Check if current path contains the target localization folder
+            if (path.Contains(targetFolder, StringComparison.OrdinalIgnoreCase))
+            {
+                // Add all .yml files in this directory
+                files.AddRange(Directory.GetFiles(path, "*.yml", SearchOption.TopDirectoryOnly));
+            }
+            
+            // Recursively scan subdirectories
             foreach (var dir in Directory.GetDirectories(path))
             {
-                var dirName = Path.GetFileName(dir);
-                
-                // Found localization folder
-                if (dirName.Equals(targetFolder, StringComparison.OrdinalIgnoreCase))
-                {
-                    files.AddRange(Directory.GetFiles(dir, "*.yml", SearchOption.AllDirectories));
-                }
-                else
-                {
-                    // Continue searching in subdirectories
-                    ScanDirectory(dir, targetFolder, files);
-                }
+                ScanDirectory(dir, targetFolder, files);
             }
         }
         catch (UnauthorizedAccessException ex)
@@ -101,7 +106,8 @@ public class FolderScannerService
         string modPath, 
         string localizationFolder, 
         string sourceLanguage, 
-        List<string> targetLanguages)
+        List<string> targetLanguages,
+        GameConfig gameConfig)
     {
         var summary = new FolderScanSummary
         {
@@ -119,28 +125,52 @@ public class FolderScannerService
         // Check each target language
         foreach (var targetLang in targetLanguages)
         {
-            var targetFiles = FilterSourceLanguageFiles(allFiles, targetLang, localizationFolder);
-            summary.ExistingFilesByLanguage[targetLang] = targetFiles.Count;
-
-            var missingFiles = FindMissingFiles(allFiles, sourceFiles, sourceLanguage, targetLang);
-            summary.MissingFilesByLanguage[targetLang] = missingFiles.Count;
-
-            // Add results
-            foreach (var sourceFile in sourceFiles)
+            if (gameConfig.UseOverrideMode)
             {
-                var correspondingTarget = sourceFile
-                    .Replace($"{Path.DirectorySeparatorChar}{sourceLanguage}{Path.DirectorySeparatorChar}", 
-                            $"{Path.DirectorySeparatorChar}{targetLang}{Path.DirectorySeparatorChar}")
-                    .Replace($"_{sourceLanguage}.yml", $"_{targetLang}.yml", StringComparison.OrdinalIgnoreCase);
+                // In override mode, we're not looking for target language files
+                // Instead, we'll generate override files in the source language folder
+                summary.ExistingFilesByLanguage[targetLang] = 0;
+                summary.MissingFilesByLanguage[targetLang] = sourceFiles.Count; // All source files need override versions
 
-                summary.AllResults.Add(new ScanResult
+                // Add results showing we need to create override versions of all source files
+                foreach (var sourceFile in sourceFiles)
                 {
-                    FilePath = correspondingTarget,
-                    FileName = Path.GetFileName(correspondingTarget),
-                    Language = targetLang,
-                    Exists = File.Exists(correspondingTarget),
-                    CorrespondingSourceFile = sourceFile
-                });
+                    summary.AllResults.Add(new ScanResult
+                    {
+                        FilePath = sourceFile, // Same path as source (override mode)
+                        FileName = Path.GetFileName(sourceFile),
+                        Language = targetLang,
+                        Exists = false, // Mark as not existing so we generate them
+                        CorrespondingSourceFile = sourceFile
+                    });
+                }
+            }
+            else
+            {
+                // Normal mode: look for target language files
+                var targetFiles = FilterSourceLanguageFiles(allFiles, targetLang, localizationFolder);
+                summary.ExistingFilesByLanguage[targetLang] = targetFiles.Count;
+
+                var missingFiles = FindMissingFiles(allFiles, sourceFiles, sourceLanguage, targetLang);
+                summary.MissingFilesByLanguage[targetLang] = missingFiles.Count;
+
+                // Add results
+                foreach (var sourceFile in sourceFiles)
+                {
+                    var correspondingTarget = sourceFile
+                        .Replace($"{Path.DirectorySeparatorChar}{sourceLanguage}{Path.DirectorySeparatorChar}", 
+                                $"{Path.DirectorySeparatorChar}{targetLang}{Path.DirectorySeparatorChar}")
+                        .Replace($"_{sourceLanguage}.yml", $"_{targetLang}.yml", StringComparison.OrdinalIgnoreCase);
+
+                    summary.AllResults.Add(new ScanResult
+                    {
+                        FilePath = correspondingTarget,
+                        FileName = Path.GetFileName(correspondingTarget),
+                        Language = targetLang,
+                        Exists = File.Exists(correspondingTarget),
+                        CorrespondingSourceFile = sourceFile
+                    });
+                }
             }
         }
 
@@ -154,7 +184,8 @@ public class FolderScannerService
         List<string> missingFiles, 
         string sourceLanguage, 
         string targetLanguage,
-        GameConfig gameConfig)
+        GameConfig gameConfig,
+        string? outputModFolder = null)
     {
         var createdFiles = new List<string>();
 
@@ -176,22 +207,68 @@ public class FolderScannerService
                 // Read source content
                 var sourceContent = File.ReadAllText(sourceFile);
 
-                // Replace language keys
-                var sourceKey = gameConfig.LanguageKeys.GetValueOrDefault(sourceLanguage, sourceLanguage);
-                var targetKey = gameConfig.LanguageKeys.GetValueOrDefault(targetLanguage, targetLanguage);
-                var targetContent = sourceContent.Replace($"l_{sourceKey}", $"l_{targetKey}");
+                string actualTargetFile;
+                string targetContent;
+                
+                if (gameConfig.UseOverrideMode)
+                {
+                    // Override mode: Create files in output mod folder structure
+                    // Keep the same relative path structure but in the override language folder
+                    
+                    if (string.IsNullOrEmpty(outputModFolder))
+                    {
+                        LoggingService.Log("ERROR", "Override mode requires outputModFolder to be specified");
+                        continue;
+                    }
+                    
+                    // Find the localization folder in the source path
+                    var localizationIndex = sourceFile.IndexOf(gameConfig.LocalizationFolder, StringComparison.OrdinalIgnoreCase);
+                    if (localizationIndex == -1)
+                    {
+                        LoggingService.Log("WARNING", $"Could not find localization folder in path: {sourceFile}");
+                        continue;
+                    }
+                    
+                    // Get the relative path from localization folder onwards
+                    var relativePath = sourceFile.Substring(localizationIndex);
+                    
+                    // Build output path: outputModFolder/localization/english/...
+                    // Replace source language folder with override language folder
+                    var sourceKey = gameConfig.LanguageKeys.GetValueOrDefault(sourceLanguage, sourceLanguage);
+                    var overrideKey = gameConfig.LanguageKeys.GetValueOrDefault(gameConfig.OverrideLanguage, gameConfig.OverrideLanguage);
+                    relativePath = relativePath.Replace($"{Path.DirectorySeparatorChar}{sourceKey}{Path.DirectorySeparatorChar}", 
+                                                       $"{Path.DirectorySeparatorChar}{overrideKey}{Path.DirectorySeparatorChar}");
+                    
+                    actualTargetFile = Path.Combine(outputModFolder, relativePath);
+                    
+                    // Content keeps the override language key (l_english:) but text will be translated
+                    // For now, we just create skeleton files with source content
+                    targetContent = sourceContent; // Keep l_english: header for override mode
+                    
+                    LoggingService.Log("INFO", $"Override mode: Creating {actualTargetFile} to override {gameConfig.OverrideLanguage}");
+                }
+                else
+                {
+                    // Normal mode: Create new language folder (e.g., vietnamese/)
+                    actualTargetFile = targetFile;
+                    
+                    // Replace language keys
+                    var sourceKey = gameConfig.LanguageKeys.GetValueOrDefault(sourceLanguage, sourceLanguage);
+                    var targetKey = gameConfig.LanguageKeys.GetValueOrDefault(targetLanguage, targetLanguage);
+                    targetContent = sourceContent.Replace($"l_{sourceKey}", $"l_{targetKey}");
+                }
 
                 // Create directory if needed
-                var targetDir = Path.GetDirectoryName(targetFile);
+                var targetDir = Path.GetDirectoryName(actualTargetFile);
                 if (!string.IsNullOrEmpty(targetDir) && !Directory.Exists(targetDir))
                 {
                     Directory.CreateDirectory(targetDir);
                 }
 
                 // Write file
-                File.WriteAllText(targetFile, targetContent);
-                createdFiles.Add(targetFile);
-                LoggingService.Log("INFO", $"Created: {targetFile}");
+                File.WriteAllText(actualTargetFile, targetContent);
+                createdFiles.Add(actualTargetFile);
+                LoggingService.Log("INFO", $"Created: {actualTargetFile}");
             }
             catch (Exception ex)
             {
@@ -200,5 +277,46 @@ public class FolderScannerService
         }
 
         return createdFiles;
+    }
+
+    /// <summary>
+    /// Generates a .mod descriptor file for a Paradox game mod
+    /// </summary>
+    public void GenerateModDescriptor(
+        string modFolderPath,
+        string modName,
+        string targetLanguage,
+        GameConfig gameConfig)
+    {
+        try
+        {
+            var modFileName = modName.Replace(" ", "_").ToLowerInvariant();
+            var descriptorPath = Path.Combine(Path.GetDirectoryName(modFolderPath) ?? modFolderPath, $"{modFileName}.mod");
+            
+            var modContent = $@"name=""{modName}""
+version=""1.0.0""
+tags={{
+    ""Translation""
+    ""Localization""
+}}
+supported_version=""*""
+path=""mod/{Path.GetFileName(modFolderPath)}""
+";
+
+            if (gameConfig.UseOverrideMode)
+            {
+                modContent += $@"
+# This mod overrides {gameConfig.OverrideLanguage} localization files with {targetLanguage} translations
+# Because {gameConfig.DisplayName} doesn't support custom languages, we override existing language files
+";
+            }
+
+            File.WriteAllText(descriptorPath, modContent);
+            LoggingService.Log("INFO", $"Created mod descriptor: {descriptorPath}");
+        }
+        catch (Exception ex)
+        {
+            LoggingService.Log("ERROR", $"Error creating mod descriptor", ex);
+        }
     }
 }

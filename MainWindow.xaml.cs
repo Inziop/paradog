@@ -58,10 +58,9 @@ namespace ParadoxTranslator
             OpenFileButton.Content = $"📂 {loc["OpenFile"]}";
             CompareButton.Content = $"🔄 {loc["Compare"]}";
             SettingsButton.Content = $"⚙️ {loc["Settings"]}";
-            StatisticsButton.Content = $"📊 {loc["Statistics"]}";
-            ExportButton.Content = $"💾 {loc["MenuExport"]}";
-            HelpButton.Content = $"❓ {loc["MenuHelp"]}";
-            AboutButton.Content = $"ℹ️ {loc["MenuAbout"]}";
+            ExportButton.Content = $"� {loc["MenuExport"]}";
+            MoreButton.Content = $"⋮ {loc["More"] ?? "More"}";
+            // Statistics, Help, About now in More menu
             
             // Language labels
             FromLabel.Text = loc["FromLanguage"];
@@ -292,28 +291,48 @@ namespace ParadoxTranslator
             // Get game configuration
             var gameConfig = GameConfig.GetAllConfigs()[_currentProject.GameType];
             
-            // Prepare target languages (exclude source language)
-            var targetLanguages = new[] { "english", "french", "german", "spanish", 
-                                         "portuguese", "russian", "polish", "simp_chinese", 
-                                         "japanese", "korean" }
-                .Where(lang => lang != _currentProject.SourceLanguage)
-                .ToList();
+            // Debug info
+            LoggingService.Log("INFO", $"Project GameType: {_currentProject.GameType}");
+            LoggingService.Log("INFO", $"Localization folder: {gameConfig.LocalizationFolder}");
+            LoggingService.Log("INFO", $"Source language: {_currentProject.SourceLanguage}");
+            
+            // Prepare target languages
+            List<string> targetLanguages;
+            
+            if (gameConfig.UseOverrideMode)
+            {
+                // In override mode, only use the project's target language
+                targetLanguages = new List<string> { _currentProject.TargetLanguage };
+                LoggingService.Log("INFO", $"Override mode: Using only project target language: {_currentProject.TargetLanguage}");
+            }
+            else
+            {
+                // Normal mode: Use all languages from gameConfig (excluding source)
+                var allLanguages = gameConfig.LanguageKeys.Keys.ToList();
+                targetLanguages = allLanguages
+                    .Where(lang => gameConfig.LanguageKeys[lang] != gameConfig.LanguageKeys.GetValueOrDefault(_currentProject.SourceLanguage, _currentProject.SourceLanguage))
+                    .Select(lang => gameConfig.LanguageKeys[lang])
+                    .ToList();
+            }
+            
+            LoggingService.Log("INFO", $"Target languages: {string.Join(", ", targetLanguages)}");
 
             try
             {
-                // Perform scan (no progress dialog, do it synchronously)
+                // Perform scan
                 var scanner = new FolderScannerService();
                 var summary = scanner.PerformComprehensiveScan(
                     modPath,
                     gameConfig.LocalizationFolder,
-                    _currentProject.SourceLanguage,
-                    targetLanguages
+                    gameConfig.LanguageKeys.GetValueOrDefault(_currentProject.SourceLanguage, _currentProject.SourceLanguage),
+                    targetLanguages,
+                    gameConfig
                 );
 
                 // Show results window
                 var resultsWindow = new FolderScanResultsWindow(
                     summary,
-                    _currentProject.SourceLanguage,
+                    gameConfig.LanguageKeys.GetValueOrDefault(_currentProject.SourceLanguage, _currentProject.SourceLanguage),
                     gameConfig
                 );
                 resultsWindow.Owner = this;
@@ -335,8 +354,11 @@ namespace ParadoxTranslator
         {
             _currentProject = project;
             
-            // Update UI
-            ProjectNameTextBlock.Text = project.Name;
+            // Get game config to display game name
+            var gameConfig = GameConfig.GetAllConfigs()[project.GameType];
+            
+            // Update UI with project name and game type
+            ProjectNameTextBlock.Text = $"{project.Name} ({gameConfig.DisplayName})";
             
             // Create new ViewModel
             var viewModel = new MainViewModel();
@@ -517,6 +539,24 @@ namespace ParadoxTranslator
             {
                 // No selection, pass null (will use ticked entries)
                 vm2.BatchTranslateCommand.Execute(null);
+            }
+        }
+
+        private void OnFilterMenuClick(object sender, RoutedEventArgs e)
+        {
+            if (sender is MenuItem menuItem && DataContext is MainViewModel vm)
+            {
+                var filterMode = menuItem.Tag?.ToString() ?? "All";
+                vm.FilterMode = filterMode;
+            }
+        }
+
+        private void OnMoreButtonClick(object sender, RoutedEventArgs e)
+        {
+            if (sender is Button button && button.ContextMenu != null)
+            {
+                button.ContextMenu.PlacementTarget = button;
+                button.ContextMenu.IsOpen = true;
             }
         }
     }

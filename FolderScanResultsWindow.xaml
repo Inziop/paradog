@@ -94,10 +94,34 @@
                     
                     <Button Grid.Column="1" x:Name="GenerateAllButton" Content="Generate All Missing" 
                             Click="OnGenerateAll"
-                            Background="#28A745" Foreground="White" 
+                            Background="#28A745" 
                             BorderThickness="0" Padding="20,10" 
                             Cursor="Hand" FontSize="13" FontWeight="SemiBold"
-                            VerticalAlignment="Center"/>
+                            VerticalAlignment="Center">
+                        <Button.Template>
+                            <ControlTemplate TargetType="Button">
+                                <Border Background="{TemplateBinding Background}" 
+                                        BorderBrush="{TemplateBinding BorderBrush}"
+                                        BorderThickness="{TemplateBinding BorderThickness}"
+                                        CornerRadius="4" Padding="{TemplateBinding Padding}">
+                                    <ContentPresenter HorizontalAlignment="Center" 
+                                                    VerticalAlignment="Center"
+                                                    TextElement.Foreground="White"
+                                                    TextElement.FontSize="{TemplateBinding FontSize}"
+                                                    TextElement.FontWeight="{TemplateBinding FontWeight}"/>
+                                </Border>
+                                <ControlTemplate.Triggers>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter Property="Background" Value="#218838"/>
+                                    </Trigger>
+                                    <Trigger Property="IsEnabled" Value="False">
+                                        <Setter Property="Background" Value="#6C757D"/>
+                                        <Setter Property="Opacity" Value="0.6"/>
+                                    </Trigger>
+                                </ControlTemplate.Triggers>
+                            </ControlTemplate>
+                        </Button.Template>
+                    </Button>
                 </Grid>
             </Border>
 
@@ -179,11 +203,27 @@
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
                                 <Button Content="Generate" 
-                                        Background="#007ACC" Foreground="White" 
+                                        Background="#007ACC" 
                                         BorderThickness="0" Padding="12,4" 
                                         FontSize="11" Cursor="Hand"
                                         Click="OnGenerateSingle"
                                         Tag="{Binding}">
+                                    <Button.Template>
+                                        <ControlTemplate TargetType="Button">
+                                            <Border Background="{TemplateBinding Background}" 
+                                                    CornerRadius="3" Padding="{TemplateBinding Padding}">
+                                                <ContentPresenter HorizontalAlignment="Center" 
+                                                                VerticalAlignment="Center"
+                                                                TextElement.Foreground="White"
+                                                                TextElement.FontSize="{TemplateBinding FontSize}"/>
+                                            </Border>
+                                            <ControlTemplate.Triggers>
+                                                <Trigger Property="IsMouseOver" Value="True">
+                                                    <Setter Property="Background" Value="#005A9E"/>
+                                                </Trigger>
+                                            </ControlTemplate.Triggers>
+                                        </ControlTemplate>
+                                    </Button.Template>
                                     <Button.Style>
                                         <Style TargetType="Button">
                                             <Setter Property="Visibility" Value="Visible"/>
@@ -204,10 +244,27 @@
             <!-- Bottom Buttons -->
             <Border Grid.Row="3" Background="#252526" BorderBrush="#3E3E42" BorderThickness="0,1,0,0" Padding="20,15">
                 <Button Content="Close" Click="OnClose"
-                        Background="#6C757D" Foreground="White" 
+                        Background="#6C757D" 
                         BorderThickness="0" Padding="20,10" 
                         Cursor="Hand" Width="100"
-                        HorizontalAlignment="Right"/>
+                        HorizontalAlignment="Right">
+                    <Button.Template>
+                        <ControlTemplate TargetType="Button">
+                            <Border Background="{TemplateBinding Background}" 
+                                    CornerRadius="4" Padding="{TemplateBinding Padding}">
+                                <ContentPresenter HorizontalAlignment="Center" 
+                                                VerticalAlignment="Center"
+                                                TextElement.Foreground="White"
+                                                TextElement.FontSize="13"/>
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter Property="Background" Value="#5A6268"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Button.Template>
+                </Button>
             </Border>
         </Grid>
     </Border>

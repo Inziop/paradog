@@ -273,60 +273,42 @@
                     
                     <Button x:Name="CompareButton" Content="🔄 Compare" Command="{Binding CompareWithNewVersionCommand}"
                             Background="#17A2B8" Style="{StaticResource HeaderButtonStyle}"
-                            Margin="0,0,10,0" ToolTip="Compare with new game version"/>
+                            Margin="0,0,20,0" ToolTip="Compare with new game version"/>
                     
-                    <!-- Quick Filter -->
-                    <Border Background="#252526" CornerRadius="4" Padding="8,4" Margin="0,0,10,0">
-                        <DockPanel>
-                            <TextBlock x:Name="FilterLabel" Text="Filter:" Foreground="#CCCCCC" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                            <ComboBox MinWidth="90" 
-                                     Background="#FFFFFF" Foreground="#000000"
-                                     TextElement.Foreground="#000000"
-                                     BorderBrush="#555555" BorderThickness="1"
-                                     SelectedValuePath="Tag"
-                                     SelectedValue="{Binding FilterMode, Mode=TwoWay}">
-                                <ComboBox.Resources>
-                                    <Style TargetType="TextBlock">
-                                        <Setter Property="Foreground" Value="#000000"/>
-                                    </Style>
-                                    <Style TargetType="ComboBoxItem">
-                                        <Setter Property="Foreground" Value="#000000"/>
-                                        <Setter Property="Background" Value="#FFFFFF"/>
-                                    </Style>
-                                </ComboBox.Resources>
-                                <ComboBoxItem Tag="All" IsSelected="True">
-                                    <TextBlock Text="All" Foreground="Black"/>
-                                </ComboBoxItem>
-                                <ComboBoxItem Tag="Translated">
-                                    <TextBlock Text="Translated" Foreground="Black"/>
-                                </ComboBoxItem>
-                                <ComboBoxItem Tag="Untranslated">
-                                    <TextBlock Text="Untranslated" Foreground="Black"/>
-                                </ComboBoxItem>
-                                <ComboBoxItem Tag="HasIssues">
-                                    <TextBlock Text="Has Issues" Foreground="Black"/>
-                                </ComboBoxItem>
-                            </ComboBox>
-                        </DockPanel>
-                    </Border>
-
-                    <!-- Other Actions -->
+                    <!-- Tools Actions with separator -->
                     <Button x:Name="SettingsButton" Content="⚙️ Settings" Command="{Binding OpenSettingsCommand}" 
                             Background="#007ACC" Style="{StaticResource HeaderButtonStyle}"
-                            Margin="10,0,0,0"
+                            Margin="0,0,10,0"
                             ToolTip="Configure translation settings (Ctrl+,)"/>
-                    <Button x:Name="StatisticsButton" Content="📊 Statistics" Command="{Binding ShowStatisticsCommand}" 
-                            Margin="10,0,0,0" Background="#28A745" Style="{StaticResource HeaderButtonStyle}"
-                            ToolTip="View translation statistics (F5)"/>
-                    <Button x:Name="ExportButton" Content="💾 Export" Command="{Binding ExportCommand}" 
-                            Margin="10,0,0,0" Background="#8E44AD" Style="{StaticResource HeaderButtonStyle}"
+                    
+                    <Button x:Name="ExportButton" Content="📤 Export" Command="{Binding ExportCommand}" 
+                            Margin="0,0,10,0" Background="#8E44AD" Style="{StaticResource HeaderButtonStyle}"
                             ToolTip="Export translations to file (Ctrl+E)"/>
-                    <Button x:Name="HelpButton" Content="❓ Help" Command="{Binding ShowWelcomeCommand}" 
-                            Margin="10,0,0,0" Background="#17A2B8" Style="{StaticResource HeaderButtonStyle}"
-                            ToolTip="Show help and welcome screen"/>
-                    <Button x:Name="AboutButton" Content="ℹ️ About" Command="{Binding ShowAboutCommand}" 
-                            Margin="10,0,0,0" Background="#6C757D" Style="{StaticResource HeaderButtonStyle}"
-                            ToolTip="About this application"/>
+                    
+                    <!-- More Menu -->
+                    <Button x:Name="MoreButton" Content="⋮ More" 
+                            Background="#6C757D" Style="{StaticResource HeaderButtonStyle}"
+                            Click="OnMoreButtonClick"
+                            ToolTip="More options">
+                        <Button.ContextMenu>
+                            <ContextMenu Background="#2D2D30" BorderBrush="#555555">
+                                <MenuItem Header="📊 Statistics" Command="{Binding ShowStatisticsCommand}"
+                                         Background="#2D2D30" Foreground="White"/>
+                                <Separator Background="#555555"/>
+                                <MenuItem Header="🔍 Filter" Background="#2D2D30" Foreground="White">
+                                    <MenuItem Header="All" Tag="All" Click="OnFilterMenuClick" Background="#2D2D30" Foreground="White"/>
+                                    <MenuItem Header="Translated" Tag="Translated" Click="OnFilterMenuClick" Background="#2D2D30" Foreground="White"/>
+                                    <MenuItem Header="Untranslated" Tag="Untranslated" Click="OnFilterMenuClick" Background="#2D2D30" Foreground="White"/>
+                                    <MenuItem Header="Has Issues" Tag="HasIssues" Click="OnFilterMenuClick" Background="#2D2D30" Foreground="White"/>
+                                </MenuItem>
+                                <Separator Background="#555555"/>
+                                <MenuItem Header="❓ Help" Command="{Binding ShowWelcomeCommand}"
+                                         Background="#2D2D30" Foreground="White"/>
+                                <MenuItem Header="ℹ️ About" Command="{Binding ShowAboutCommand}"
+                                         Background="#2D2D30" Foreground="White"/>
+                            </ContextMenu>
+                        </Button.ContextMenu>
+                    </Button>
                     </StackPanel>
                 </Grid>
             </Border>

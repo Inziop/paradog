@@ -1,3 +1,5 @@
+using System;
+using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using ParadoxTranslator.Models;
@@ -5,6 +7,15 @@ using ParadoxTranslator.Services;
 
 namespace ParadoxTranslator
 {
+    // Helper class for displaying projects in the list
+    public class ProjectDisplayItem
+    {
+        public string Id { get; set; } = string.Empty;
+        public string Name { get; set; } = string.Empty;
+        public string Description { get; set; } = string.Empty;
+        public DateTime LastOpenedDate { get; set; }
+    }
+    
     public partial class ProjectSelectionWindow : Window
     {
         public Project? SelectedProject { get; private set; }
@@ -21,7 +32,20 @@ namespace ParadoxTranslator
             
             if (recentProjects.Count > 0)
             {
-                RecentProjectsList.ItemsSource = recentProjects;
+                // Create display objects with game type info
+                var displayProjects = recentProjects.Select(p =>
+                {
+                    var gameConfig = GameConfig.GetAllConfigs()[p.GameType];
+                    return new ProjectDisplayItem
+                    {
+                        Id = p.Id,
+                        Name = $"{p.Name} ({gameConfig.DisplayName})",
+                        Description = p.Description,
+                        LastOpenedDate = p.LastOpenedDate
+                    };
+                }).ToList();
+                
+                RecentProjectsList.ItemsSource = displayProjects;
                 EmptyState.Visibility = Visibility.Collapsed;
             }
             else

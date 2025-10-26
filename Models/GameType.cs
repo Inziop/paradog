@@ -20,6 +20,11 @@ public class GameConfig
     public string LocalizationFolder { get; set; } = "localisation"; // Default
     public Dictionary<string, string> LanguageKeys { get; set; } = new();
     public string IconEmoji { get; set; } = "🎮";
+    
+    // For games that don't support custom languages (like Vietnamese in Victoria 3),
+    // we need to override an existing language instead of creating new language folders
+    public bool UseOverrideMode { get; set; } = false;
+    public string OverrideLanguage { get; set; } = "english"; // Which language to override
 
     public static Dictionary<GameType, GameConfig> GetAllConfigs()
     {
@@ -110,9 +115,11 @@ public class GameConfig
                     Type = GameType.Victoria3,
                     Name = "vic3",
                     DisplayName = "Victoria 3",
-                    LocalizationFolder = "localisation",
+                    LocalizationFolder = "localization", // Victoria 3 uses 'z' spelling
                     LanguageKeys = defaultLanguageKeys,
-                    IconEmoji = "🏭"
+                    IconEmoji = "🏭",
+                    UseOverrideMode = true, // Victoria 3 doesn't support custom languages
+                    OverrideLanguage = "english" // Override English files with Vietnamese content
                 }
             }
         };

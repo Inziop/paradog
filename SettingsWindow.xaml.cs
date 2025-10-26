@@ -113,7 +113,7 @@ Would you like to open the Google Cloud Console?";
         DeepLApiKeyTextBox.Text = cfg.DeepLApiKey;
         GeminiApiKeyTextBox.Text = cfg.GeminiApiKey;
         GeminiEndpointTextBox.Text = cfg.GeminiEndpoint;
-        EnableAICheckBox.IsChecked = cfg.EnableAi;
+        // EnableAI checkbox removed - use toolbar toggle instead
         OverwriteExistingCheckBox.IsChecked = cfg.OverwriteExistingTranslations;
         ValidatePlaceholdersCheckBox.IsChecked = cfg.TreatPlaceholderMismatchAsError;
         CreateBackupCheckBox.IsChecked = cfg.CreateBackupBeforeSave;
@@ -145,8 +145,7 @@ Would you like to open the Google Cloud Console?";
         // Read UI and save settings to configuration
         var cfg = Services.SettingsService.LoadConfig();
 
-        // AI enable
-        cfg.EnableAi = EnableAICheckBox.IsChecked == true;
+        // AI enable - no longer saved here, managed by toolbar toggle
 
         if (EngineComboBox.SelectedItem is ComboBoxItem engineItem)
             cfg.SelectedEngine = engineItem.Tag?.ToString() ?? cfg.SelectedEngine;
