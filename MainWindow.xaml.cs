@@ -4,6 +4,8 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Threading;
+using System.Runtime.InteropServices;
+using System.Windows.Interop;
 using TextBox = System.Windows.Controls.TextBox;
 using ParadoxTranslator.ViewModels;
 using ParadoxTranslator.Services;
@@ -16,6 +18,52 @@ namespace ParadoxTranslator
     public partial class MainWindow : Window
     {
         private Project _currentProject;
+        
+        // Windows API for proper maximize handling
+        [DllImport("user32.dll")]
+        private static extern bool GetMonitorInfo(IntPtr hMonitor, ref MONITORINFO lpmi);
+        
+        [DllImport("user32.dll")]
+        private static extern IntPtr MonitorFromWindow(IntPtr hwnd, uint dwFlags);
+        
+        private const uint MONITOR_DEFAULTTONEAREST = 2;
+        
+        [StructLayout(LayoutKind.Sequential)]
+        private struct MONITORINFO
+        {
+            public int cbSize;
+            public RECT rcMonitor;
+            public RECT rcWork;
+            public uint dwFlags;
+        }
+        
+        [StructLayout(LayoutKind.Sequential)]
+        private struct RECT
+        {
+            public int Left;
+            public int Top;
+            public int Right;
+            public int Bottom;
+        }
+        
+        [StructLayout(LayoutKind.Sequential)]
+        private struct POINT
+        {
+            public int X;
+            public int Y;
+        }
+        
+        [StructLayout(LayoutKind.Sequential)]
+        private struct MINMAXINFO
+        {
+            public POINT ptReserved;
+            public POINT ptMaxSize;
+            public POINT ptMaxPosition;
+            public POINT ptMinTrackSize;
+            public POINT ptMaxTrackSize;
+        }
+        
+        private const int WM_GETMINMAXINFO = 0x0024;
         
         public MainWindow(Project project)
         {
@@ -39,6 +87,16 @@ namespace ParadoxTranslator
             StateChanged += OnStateChanged;
             Closing += OnClosing;
             
+            // Hook Windows message for proper maximize
+            SourceInitialized += (s, e) =>
+            {
+                var hwnd = new WindowInteropHelper(this).Handle;
+                HwndSource.FromHwnd(hwnd)?.AddHook(WndProc);
+            };
+            
+            // Set optimal window size based on screen resolution
+            SetOptimalWindowSize();
+            
             // Register keyboard shortcuts
             RegisterKeyboardShortcuts();
             
@@ -48,6 +106,52 @@ namespace ParadoxTranslator
             // Subscribe to localization changes
             Services.LocalizationService.Instance.PropertyChanged += (s, e) => UpdateLocalization();
             UpdateLocalization();
+        }
+
+        private void SetOptimalWindowSize()
+        {
+            var workArea = SystemParameters.WorkArea;
+            
+            // Normal state: 80% of work area (balanced, not too big, not too small)
+            Width = workArea.Width * 0.8;
+            Height = workArea.Height * 0.8;
+            
+            // Ensure minimum size
+            if (Width < 1200) Width = 1200;
+            if (Height < 700) Height = 700;
+            
+            // Center on screen PROPERLY
+            Left = workArea.Left + (workArea.Width - Width) / 2;
+            Top = workArea.Top + (workArea.Height - Height) / 2;
+        }
+
+        // Handle Windows messages for proper maximize
+        private IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
+        {
+            if (msg == WM_GETMINMAXINFO)
+            {
+                // Get monitor info
+                var monitor = MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST);
+                if (monitor != IntPtr.Zero)
+                {
+                    var monitorInfo = new MONITORINFO { cbSize = Marshal.SizeOf(typeof(MONITORINFO)) };
+                    if (GetMonitorInfo(monitor, ref monitorInfo))
+                    {
+                        var workArea = monitorInfo.rcWork;
+                        var maxInfo = (MINMAXINFO)Marshal.PtrToStructure(lParam, typeof(MINMAXINFO))!;
+                        
+                        // Set maximize size to work area (exclude taskbar)
+                        maxInfo.ptMaxSize.X = workArea.Right - workArea.Left;
+                        maxInfo.ptMaxSize.Y = workArea.Bottom - workArea.Top;
+                        maxInfo.ptMaxPosition.X = workArea.Left - monitorInfo.rcMonitor.Left;
+                        maxInfo.ptMaxPosition.Y = workArea.Top - monitorInfo.rcMonitor.Top;
+                        
+                        Marshal.StructureToPtr(maxInfo, lParam, true);
+                        handled = true;
+                    }
+                }
+            }
+            return IntPtr.Zero;
         }
 
         private void UpdateLocalization()
@@ -99,21 +203,55 @@ namespace ParadoxTranslator
         {
             if (WindowState == WindowState.Maximized)
             {
-                // Adjust window to fit within working area (excluding taskbar)
+                // When maximized: remove rounded corners, fit to work area (exclude taskbar)
                 var workArea = SystemParameters.WorkArea;
                 MaxHeight = workArea.Height;
                 MaxWidth = workArea.Width;
                 
-                // Remove all margins to make window reach screen edges completely
-                BorderThickness = new Thickness(0);
-                Margin = new Thickness(0);
+                // Remove border for edge-to-edge maximized window
+                var mainBorder = (Border)((Grid)Content).Children[0];
+                mainBorder.CornerRadius = new CornerRadius(0);
+                mainBorder.BorderThickness = new Thickness(0);
+                
+                // Update button: Show "restore down" icon and tooltip
+                UpdateMaximizeButton(isMaximized: true);
             }
-            else
+            else if (WindowState == WindowState.Normal)
             {
+                // When restored: add rounded corners back AND set optimal size
                 MaxHeight = double.PositiveInfinity;
                 MaxWidth = double.PositiveInfinity;
-                BorderThickness = new Thickness(0);
-                Margin = new Thickness(0);
+                
+                var mainBorder = (Border)((Grid)Content).Children[0];
+                mainBorder.CornerRadius = new CornerRadius(8);
+                mainBorder.BorderThickness = new Thickness(1);
+                
+                // Set optimal size and center position for restored window
+                SetOptimalWindowSize();
+                
+                // Update button: Show "maximize" icon and tooltip
+                UpdateMaximizeButton(isMaximized: false);
+            }
+        }
+
+        private void UpdateMaximizeButton(bool isMaximized)
+        {
+            // Find the MaximizeButton in visual tree
+            var button = this.FindName("MaximizeButton") as Button;
+            if (button != null)
+            {
+                if (isMaximized)
+                {
+                    // Maximized state: show "Restore Down" (❐ or 🗗)
+                    button.Content = "🗗";
+                    button.ToolTip = "Restore Down";
+                }
+                else
+                {
+                    // Normal state: show "Maximize" (□ or 🗖)
+                    button.Content = "🗖";
+                    button.ToolTip = "Maximize";
+                }
             }
         }
 
@@ -125,9 +263,6 @@ namespace ParadoxTranslator
         private void OnMaximize(object sender, RoutedEventArgs e)
         {
             WindowState = WindowState == WindowState.Maximized ? WindowState.Normal : WindowState.Maximized;
-            
-            // Update maximize button icon
-            MaximizeButton.Content = WindowState == WindowState.Maximized ? "❐" : "□";
         }
 
         private void OnCloseWindow(object sender, RoutedEventArgs e)
@@ -144,8 +279,15 @@ namespace ParadoxTranslator
                 return;
             }
             
+            // Safety check: ensure ToastContainer exists
+            if (ToastContainer == null)
+            {
+                System.Diagnostics.Debug.WriteLine($"ToastContainer is null! Cannot show toast: {title} - {message}");
+                return;
+            }
+            
             var toast = new ToastNotification();
-            ToastContainer?.Children.Add(toast);
+            ToastContainer.Children.Add(toast);
             toast.Show(title, message, type);
             
             // Auto-remove from container after animation completes (3s display + 0.2s fade-out)
@@ -381,7 +523,7 @@ namespace ParadoxTranslator
                 
                 // Restore translations from session
                 ParadoxTranslator.Models.SessionState session = SessionService.Load();
-                if (session.Translations != null)
+                if (session?.Translations != null)
                 {
                     foreach (var file in viewModel.Files)
                     {
@@ -407,9 +549,17 @@ namespace ParadoxTranslator
         {
             if (sender is MenuItem menuItem && menuItem.DataContext is LocalizationEntryViewModel entry)
             {
-                System.Windows.Clipboard.SetText(entry.Key);
-                if (DataContext is MainViewModel vm)
-                    vm.StatusMessage = $"Copied key: {entry.Key}";
+                try
+                {
+                    System.Windows.Clipboard.SetText(entry.Key);
+                    if (DataContext is MainViewModel vm)
+                        vm.StatusMessage = $"Copied key: {entry.Key}";
+                }
+                catch (System.Runtime.InteropServices.COMException)
+                {
+                    if (DataContext is MainViewModel vm)
+                        vm.StatusMessage = "Clipboard is busy, please try again";
+                }
             }
         }
 
@@ -417,9 +567,17 @@ namespace ParadoxTranslator
         {
             if (sender is MenuItem menuItem && menuItem.DataContext is LocalizationEntryViewModel entry)
             {
-                System.Windows.Clipboard.SetText(entry.Entry.SourceText);
-                if (DataContext is MainViewModel vm)
-                    vm.StatusMessage = "Copied source text";
+                try
+                {
+                    System.Windows.Clipboard.SetText(entry.Entry.SourceText);
+                    if (DataContext is MainViewModel vm)
+                        vm.StatusMessage = "Copied source text";
+                }
+                catch (System.Runtime.InteropServices.COMException)
+                {
+                    if (DataContext is MainViewModel vm)
+                        vm.StatusMessage = "Clipboard is busy, please try again";
+                }
             }
         }
 
@@ -427,9 +585,17 @@ namespace ParadoxTranslator
         {
             if (sender is MenuItem menuItem && menuItem.DataContext is LocalizationEntryViewModel entry)
             {
-                System.Windows.Clipboard.SetText(entry.Entry.TranslatedText ?? string.Empty);
-                if (DataContext is MainViewModel vm)
-                    vm.StatusMessage = "Copied translation";
+                try
+                {
+                    System.Windows.Clipboard.SetText(entry.Entry.TranslatedText ?? string.Empty);
+                    if (DataContext is MainViewModel vm)
+                        vm.StatusMessage = "Copied translation";
+                }
+                catch (System.Runtime.InteropServices.COMException)
+                {
+                    if (DataContext is MainViewModel vm)
+                        vm.StatusMessage = "Clipboard is busy, please try again";
+                }
             }
         }
 
@@ -465,7 +631,7 @@ namespace ParadoxTranslator
                     // Try to restore translations from session for this project
                     ParadoxTranslator.Models.SessionState session = SessionService.Load();
                     // Only restore translations, not file list
-                    if (session.Translations != null)
+                    if (session?.Translations != null)
                     {
                         foreach (var file in vm.Files)
                         {

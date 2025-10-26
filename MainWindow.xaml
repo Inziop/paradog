@@ -6,7 +6,8 @@
         xmlns:controls="clr-namespace:ParadoxTranslator.Controls"
         xmlns:utils="clr-namespace:ParadoxTranslator.Utils"
         mc:Ignorable="d"
-        Title="Paradox Translator" Height="900" Width="1400"
+        Title="Paradox Translator"
+        Height="900" Width="1400"
         WindowStartupLocation="CenterScreen"
         MinHeight="700" MinWidth="1200"
         Background="#1E1E1E"
@@ -18,7 +19,7 @@
         <WindowChrome CaptionHeight="40" 
                       ResizeBorderThickness="5"
                       GlassFrameThickness="0"
-                      CornerRadius="8"/>
+                      CornerRadius="0"/>
     </WindowChrome.WindowChrome>
     
     <Window.Resources>
@@ -121,10 +122,23 @@
                                 Style="{StaticResource WindowButtonStyle}"
                                 Click="OnMinimize"
                                 ToolTip="Minimize"/>
-                        <Button x:Name="MaximizeButton" Content="□" 
+                        <Button x:Name="MaximizeButton" 
                                 Style="{StaticResource WindowButtonStyle}"
-                                Click="OnMaximize"
-                                ToolTip="Maximize"/>
+                                Click="OnMaximize">
+                            <Button.ToolTip>
+                                <ToolTip>
+                                    <TextBlock>
+                                        <Run Text="Maximize" FontWeight="Bold"/>
+                                        <LineBreak/>
+                                        <Run Text="Click to fill screen" FontSize="10" Foreground="#AAAAAA"/>
+                                    </TextBlock>
+                                </ToolTip>
+                            </Button.ToolTip>
+                            <Button.Content>
+                                <!-- Icon changes based on window state -->
+                                <TextBlock x:Name="MaximizeIcon" Text="🗖" FontSize="14" VerticalAlignment="Center"/>
+                            </Button.Content>
+                        </Button>
                         <Button x:Name="CloseButton" Content="✕" 
                                 Style="{StaticResource CloseButtonStyle}"
                                 Click="OnCloseWindow"
